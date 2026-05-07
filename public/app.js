@@ -214,6 +214,7 @@ searchInput.addEventListener("input", () => {
   searchTimer = setTimeout(loadEmails, 250);
 });
 refreshButton.addEventListener("click", loadEmails);
+setInterval(loadEmails, 15000);
 closeModalButton.addEventListener("click", () => emailModal.close());
 emailModal.addEventListener("click", (event) => {
   if (event.target === emailModal) emailModal.close();
