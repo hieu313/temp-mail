@@ -263,13 +263,11 @@ dd {
   overflow-wrap: anywhere;
 }
 
-.mail-body {
-  background: white;
+.mail-body iframe {
   border: 1px solid #e5e7eb;
   border-radius: 12px;
-  max-height: 420px;
-  overflow: auto;
-  padding: 16px;
+  height: 500px;
+  width: 100%;
 }
 
 @media (max-width: 720px) {

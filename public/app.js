@@ -19,6 +19,10 @@ function truncate(value, maxLength = 48) {
   return `${normalized.slice(0, maxLength - 1)}…`;
 }
 
+function escapeHtml(value) {
+  return String(value || "").replace(/&/g, "&amp;").replace(/"/g, "&quot;");
+}
+
 function renderStatus(message) {
   const row = document.createElement("tr");
   const cell = document.createElement("td");
@@ -158,7 +162,7 @@ async function showEmail(id) {
   detailFrom.textContent = text(email.fromAddress);
   detailTo.textContent = text(email.toAddress);
   detailSubject.textContent = text(email.subject);
-  detailBody.innerHTML = email.body || "";
+  detailBody.innerHTML = `<iframe srcdoc="${escapeHtml(email.body)}" sandbox="allow-same-origin"></iframe>`;
   emailModal.showModal();
 }
 
