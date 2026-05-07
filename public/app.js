@@ -22,7 +22,7 @@ function renderStatus(message) {
   const row = document.createElement("tr");
   const cell = document.createElement("td");
   cell.className = "empty";
-  cell.colSpan = 4;
+  cell.colSpan = 5;
   cell.textContent = message;
   row.append(cell);
   emailRows.replaceChildren(row);
@@ -69,6 +69,27 @@ function createCodeCell(code) {
   return cell;
 }
 
+function createCreatedAtCell(createdAt) {
+  const cell = document.createElement("td");
+  const wrapper = document.createElement("div");
+  const timeLine = document.createElement("div");
+  const dateLine = document.createElement("div");
+  const date = new Date(createdAt);
+
+  wrapper.className = "created-at-cell";
+  if (Number.isNaN(date.getTime())) {
+    timeLine.textContent = "—";
+    dateLine.textContent = "—";
+  } else {
+    timeLine.textContent = date.toLocaleTimeString("vi-VN", { hour12: false });
+    dateLine.textContent = date.toLocaleDateString("vi-VN");
+  }
+
+  wrapper.append(timeLine, dateLine);
+  cell.append(wrapper);
+  return cell;
+}
+
 function createActionButton(label, className, id) {
   const button = document.createElement("button");
   button.className = className;
@@ -98,6 +119,7 @@ function renderEmails(emails) {
       createCell(email.subject, { truncate: true, maxLength: 64 }),
       createAddressCell(email),
       createCodeCell(email.code),
+      createCreatedAtCell(email.createdAt),
       actionsCell,
     );
     return row;

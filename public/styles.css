@@ -124,6 +124,22 @@ th {
   letter-spacing: 0;
 }
 
+.created-at-cell {
+  color: #374151;
+  display: grid;
+  font-size: 13px;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.created-at-cell div:first-child {
+  font-weight: 700;
+}
+
+.created-at-cell div:last-child {
+  color: #6b7280;
+}
+
 .actions {
   display: flex;
   flex-wrap: wrap;
