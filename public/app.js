@@ -1,4 +1,6 @@
 const emailRows = document.querySelector("#emailRows");
+const searchInput = document.querySelector("#searchInput");
+const clearSearchButton = document.querySelector("#clearSearchButton");
 const refreshButton = document.querySelector("#refreshButton");
 const emailModal = document.querySelector("#emailModal");
 const closeModalButton = document.querySelector("#closeModalButton");
@@ -128,7 +130,9 @@ function renderEmails(emails) {
 
 async function loadEmails() {
   renderStatus("Đang tải...");
-  const response = await fetch("/api/emails");
+  const query = searchInput.value.trim();
+  const path = query ? `/api/emails/search?q=${encodeURIComponent(query)}` : "/api/emails";
+  const response = await fetch(path);
 
   if (!response.ok) {
     renderStatus("Không tải được email.");
@@ -201,6 +205,15 @@ emailRows.addEventListener("click", (event) => {
   }
 });
 
+let searchTimer;
+searchInput.addEventListener("input", () => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(loadEmails, 250);
+});
+clearSearchButton.addEventListener("click", () => {
+  searchInput.value = "";
+  loadEmails();
+});
 refreshButton.addEventListener("click", loadEmails);
 closeModalButton.addEventListener("click", () => emailModal.close());
 emailModal.addEventListener("click", (event) => {

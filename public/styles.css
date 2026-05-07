@@ -35,6 +35,27 @@ button {
   margin-bottom: 20px;
 }
 
+.header-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+#searchInput {
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  font: inherit;
+  min-width: 240px;
+  padding: 10px 12px;
+}
+
+#clearSearchButton {
+  background: #e5e7eb;
+  color: #374151;
+}
+
 h1,
 p {
   margin: 0;
@@ -220,9 +241,15 @@ pre {
 }
 
 @media (max-width: 720px) {
-  .page-header {
+  .page-header,
+  .header-actions {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  #searchInput {
+    min-width: 0;
+    width: 100%;
   }
 
   table,
