@@ -43,7 +43,8 @@ button {
   justify-content: flex-end;
 }
 
-#searchInput {
+#searchInput,
+#twoFactorSecretInput {
   border: 1px solid #d1d5db;
   border-radius: 10px;
   font: inherit;
@@ -81,6 +82,23 @@ p {
 
 .card {
   overflow: hidden;
+}
+
+.two-factor-card {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  padding: 16px;
+}
+
+.two-factor-card #twoFactorSecretInput {
+  flex: 1;
+  min-width: 0;
+}
+
+.two-factor-card #twoFactorCodeButton {
+  flex: 0 0 auto;
 }
 
 table {
@@ -277,9 +295,22 @@ dd {
     flex-direction: column;
   }
 
-  #searchInput {
+  #searchInput,
+  #twoFactorSecretInput {
     min-width: 0;
     width: 100%;
+  }
+
+  .two-factor-card {
+    flex-wrap: wrap;
+  }
+
+  .two-factor-card #twoFactorSecretInput {
+    flex-basis: 100%;
+  }
+
+  .two-factor-card #twoFactorCodeButton {
+    flex: 1;
   }
 
   table,

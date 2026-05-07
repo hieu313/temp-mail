@@ -1,6 +1,8 @@
 const emailRows = document.querySelector("#emailRows");
 const searchInput = document.querySelector("#searchInput");
 const refreshButton = document.querySelector("#refreshButton");
+const twoFactorSecretInput = document.querySelector("#twoFactorSecretInput");
+const twoFactorCodeButton = document.querySelector("#twoFactorCodeButton");
 const emailModal = document.querySelector("#emailModal");
 const closeModalButton = document.querySelector("#closeModalButton");
 
@@ -192,6 +194,20 @@ async function copyCode(button) {
   }, 900);
 }
 
+async function generateTwoFactorCode() {
+  const secret = twoFactorSecretInput.value.trim();
+  if (!secret) return;
+
+  try {
+    const code = await window.twoFactorAuth.generateTotp(secret);
+    twoFactorCodeButton.dataset.code = code;
+    twoFactorCodeButton.textContent = code;
+    twoFactorCodeButton.disabled = false;
+  } catch (error) {
+    alert(error.message);
+  }
+}
+
 emailRows.addEventListener("click", (event) => {
   const codeButton = event.target.closest("button[data-code]");
   if (codeButton) {
@@ -218,6 +234,8 @@ searchInput.addEventListener("input", () => {
   searchTimer = setTimeout(loadEmails, 250);
 });
 refreshButton.addEventListener("click", loadEmails);
+twoFactorSecretInput.addEventListener("input", generateTwoFactorCode);
+twoFactorCodeButton.addEventListener("click", () => copyCode(twoFactorCodeButton));
 setInterval(loadEmails, 15000);
 closeModalButton.addEventListener("click", () => emailModal.close());
 emailModal.addEventListener("click", (event) => {

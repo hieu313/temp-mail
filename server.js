@@ -5,6 +5,7 @@ const { JSDOM } = require("jsdom");
 const { simpleParser } = require("mailparser");
 const path = require("path");
 const { SMTPServer } = require("smtp-server");
+const { generateTotp } = require("./public/two-factor-auth");
 
 const HTTP_PORT = Number(process.env.HTTP_PORT || 3000);
 const SMTP_PORT = Number(process.env.SMTP_PORT || 25);
@@ -81,6 +82,15 @@ function mapEmail(row) {
 const app = express();
 app.use(express.json());
 app.use(express.static(PUBLIC_DIR));
+
+app.post("/api/2fa/generate", (req, res) => {
+  try {
+    const code = generateTotp(req.body.secret);
+    res.json({ code });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
 
 app.get("/api/emails", (req, res) => {
   const rows = db.prepare(`
