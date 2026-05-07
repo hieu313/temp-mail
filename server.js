@@ -84,7 +84,7 @@ app.delete("/api/emails/:id", (req, res) => {
 
 const smtpServer = new SMTPServer({
   authOptional: true,
-  disabledCommands: ["AUTH"],
+  disabledCommands: ["AUTH", "STARTTLS"],
   onData(stream, session, callback) {
     simpleParser(stream, (err, parsed) => {
       if (err) {
