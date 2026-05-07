@@ -31,6 +31,7 @@ function renderStatus(message) {
 
 function createCell(value, options = {}) {
   const cell = document.createElement("td");
+  if (options.className) cell.className = options.className;
   const content = options.truncate ? truncate(value, options.maxLength) : text(value);
   cell.textContent = content;
   if (content !== text(value)) cell.title = text(value);
@@ -59,6 +60,7 @@ function createAddressCell(email) {
 
 function createCodeCell(code) {
   const cell = document.createElement("td");
+  cell.className = "code-cell";
   const button = document.createElement("button");
   button.className = "code-button";
   button.type = "button";
@@ -72,6 +74,7 @@ function createCodeCell(code) {
 
 function createCreatedAtCell(createdAt) {
   const cell = document.createElement("td");
+  cell.className = "created-at-column";
   const wrapper = document.createElement("div");
   const timeLine = document.createElement("div");
   const dateLine = document.createElement("div");
@@ -116,8 +119,9 @@ function renderEmails(emails) {
       createActionButton("Xóa", "delete-button", email.id),
     );
     actionsCell.append(actions);
+    actionsCell.className = "actions-cell";
     row.append(
-      createCell(email.subject, { truncate: true, maxLength: 64 }),
+      createCell(email.subject, { className: "subject-cell", truncate: true, maxLength: 64 }),
       createAddressCell(email),
       createCodeCell(email.code),
       createCreatedAtCell(email.createdAt),
