@@ -17,7 +17,6 @@ db.prepare(`
     from_address TEXT,
     to_address TEXT,
     subject TEXT,
-    date TEXT,
     body TEXT,
     code TEXT,
     created_at TEXT NOT NULL
@@ -25,8 +24,8 @@ db.prepare(`
 `).run();
 
 const insertEmail = db.prepare(`
-  INSERT INTO emails (from_address, to_address, subject, date, body, code, created_at)
-  VALUES (@fromAddress, @toAddress, @subject, @date, @body, @code, @createdAt)
+  INSERT INTO emails (from_address, to_address, subject, body, code, created_at)
+  VALUES (@fromAddress, @toAddress, @subject, @body, @code, @createdAt)
 `);
 
 function seedWelcomeEmail() {
@@ -38,7 +37,6 @@ function seedWelcomeEmail() {
     fromAddress: "welcome@temp-mail.local",
     toAddress: "inbox@hieunm3103.id.vn",
     subject: "Welcome to Temp Mail Browser",
-    date: createdAt,
     body: "Chào mừng bạn đến với Temp Mail Browser. Email mẫu này được tạo tự động để kiểm tra giao diện danh sách và modal chi tiết. Mã demo: 123456",
     code: "123456",
     createdAt,
@@ -57,7 +55,6 @@ function mapEmail(row) {
     fromAddress: row.from_address,
     toAddress: row.to_address,
     subject: row.subject,
-    date: row.date,
     body: row.body,
     code: row.code,
     createdAt: row.created_at,
@@ -70,7 +67,7 @@ app.use(express.static(PUBLIC_DIR));
 
 app.get("/api/emails", (req, res) => {
   const rows = db.prepare(`
-    SELECT id, from_address, to_address, subject, date, code, created_at
+    SELECT id, from_address, to_address, subject, code, created_at
     FROM emails
     ORDER BY id DESC
   `).all();
@@ -115,7 +112,6 @@ const smtpServer = new SMTPServer({
         fromAddress: parsed.from?.value?.[0]?.address ?? parsed.from?.text ?? null,
         toAddress: parsed.to?.value?.[0]?.address ?? null,
         subject: parsed.subject ?? null,
-        date: parsed.date?.toISOString?.() ?? parsed.date?.toString?.() ?? null,
         body,
         code: extractCode(body),
         createdAt: new Date().toISOString(),

@@ -197,7 +197,6 @@ Returns rows with:
 - `fromAddress`
 - `toAddress`
 - `subject`
-- `date`
 - `code`
 - `createdAt`
 

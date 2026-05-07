@@ -6,7 +6,7 @@ const closeModalButton = document.querySelector("#closeModalButton");
 const detailFrom = document.querySelector("#detailFrom");
 const detailTo = document.querySelector("#detailTo");
 const detailSubject = document.querySelector("#detailSubject");
-const detailDate = document.querySelector("#detailDate");
+const detailCreatedAt = document.querySelector("#detailCreatedAt");
 const detailCode = document.querySelector("#detailCode");
 const detailBody = document.querySelector("#detailBody");
 
@@ -108,7 +108,7 @@ async function showEmail(id) {
   detailFrom.textContent = text(email.fromAddress);
   detailTo.textContent = text(email.toAddress);
   detailSubject.textContent = text(email.subject);
-  detailDate.textContent = text(email.date);
+  detailCreatedAt.textContent = text(email.createdAt);
   detailCode.textContent = text(email.code);
   detailBody.textContent = text(email.body);
   emailModal.showModal();
