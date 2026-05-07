@@ -29,9 +29,27 @@ const insertEmail = db.prepare(`
   VALUES (@fromAddress, @toAddress, @subject, @date, @body, @code, @createdAt)
 `);
 
+function seedWelcomeEmail() {
+  const emailCount = db.prepare("SELECT COUNT(*) AS count FROM emails").get().count;
+  if (emailCount > 0) return;
+
+  const createdAt = new Date().toISOString();
+  insertEmail.run({
+    fromAddress: "welcome@temp-mail.local",
+    toAddress: "inbox@hieunm3103.id.vn",
+    subject: "Welcome to Temp Mail Browser",
+    date: createdAt,
+    body: "Chào mừng bạn đến với Temp Mail Browser. Email mẫu này được tạo tự động để kiểm tra giao diện danh sách và modal chi tiết. Mã demo: 123456",
+    code: "123456",
+    createdAt,
+  });
+}
+
 function extractCode(body) {
   return body?.match(/\b\d{6}\b/)?.[0] ?? null;
 }
+
+seedWelcomeEmail();
 
 function mapEmail(row) {
   return {
