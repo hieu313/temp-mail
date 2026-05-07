@@ -267,8 +267,9 @@ dd {
   background: white;
   border: 1px solid #e5e7eb;
   border-radius: 12px;
-  height: 420px;
-  width: 100%;
+  max-height: 420px;
+  overflow: auto;
+  padding: 16px;
 }
 
 @media (max-width: 720px) {

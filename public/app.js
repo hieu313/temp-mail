@@ -158,7 +158,7 @@ async function showEmail(id) {
   detailFrom.textContent = text(email.fromAddress);
   detailTo.textContent = text(email.toAddress);
   detailSubject.textContent = text(email.subject);
-  detailBody.srcdoc = email.body || "";
+  detailBody.innerHTML = email.body || "";
   emailModal.showModal();
 }
 

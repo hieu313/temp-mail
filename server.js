@@ -134,7 +134,7 @@ const smtpServer = new SMTPServer({
         return;
       }
 
-      const body = parsed.text || parsed.html || "";
+      const body = parsed.html || parsed.text || "";
       const email = {
         fromAddress: parsed.from?.value?.[0]?.address ?? parsed.from?.text ?? null,
         toAddress: parsed.to?.value?.[0]?.address ?? null,
