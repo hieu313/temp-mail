@@ -111,7 +111,7 @@ function renderEmails(emails) {
     const actions = document.createElement("div");
     actions.className = "actions";
     actions.append(
-      createActionButton("Xem chi tiết", "view-button", email.id),
+      createActionButton("Đọc", "view-button", email.id),
       createActionButton("Xóa", "delete-button", email.id),
     );
     actionsCell.append(actions);
