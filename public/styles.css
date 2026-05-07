@@ -263,15 +263,12 @@ dd {
   overflow-wrap: anywhere;
 }
 
-pre {
-  background: #111827;
+.mail-body {
+  background: white;
+  border: 1px solid #e5e7eb;
   border-radius: 12px;
-  color: #f9fafb;
-  margin: 0;
-  max-height: 420px;
-  overflow: auto;
-  padding: 16px;
-  white-space: pre-wrap;
+  height: 420px;
+  width: 100%;
 }
 
 @media (max-width: 720px) {
