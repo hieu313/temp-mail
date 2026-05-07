@@ -75,6 +75,24 @@ app.get("/api/emails", (req, res) => {
   res.json(rows.map(mapEmail));
 });
 
+app.get("/api/emails/search", (req, res) => {
+  const query = String(req.query.q || "").trim();
+
+  if (!query) {
+    res.json([]);
+    return;
+  }
+
+  const rows = db.prepare(`
+    SELECT id, from_address, to_address, subject, code, created_at
+    FROM emails
+    WHERE from_address LIKE @query OR to_address LIKE @query
+    ORDER BY id DESC
+  `).all({ query: `%${query}%` });
+
+  res.json(rows.map(mapEmail));
+});
+
 app.get("/api/emails/:id", (req, res) => {
   const row = db.prepare("SELECT * FROM emails WHERE id = ?").get(req.params.id);
 

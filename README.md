@@ -200,6 +200,14 @@ Returns rows with:
 - `code`
 - `createdAt`
 
+### Search emails by address
+
+```http
+GET /api/emails/search?q=inbox
+```
+
+Searches both `fromAddress` and `toAddress`. Returns the same row shape as `GET /api/emails`.
+
 ### Get email detail
 
 ```http
