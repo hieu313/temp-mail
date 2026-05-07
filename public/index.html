@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Temp Mail Browser</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <main class="page">
+      <header class="page-header">
+        <div>
+          <h1>Temp Mail Browser</h1>
+          <p>Danh sách email nhận được qua SMTP.</p>
+        </div>
+        <button id="refreshButton" type="button">Làm mới</button>
+      </header>
+
+      <section class="card">
+        <table>
+          <thead>
+            <tr>
+              <th>Địa chỉ gửi</th>
+              <th>Địa chỉ nhận</th>
+              <th>Code</th>
+              <th>Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="emailRows">
+            <tr>
+              <td colspan="4" class="empty">Đang tải...</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+    </main>
+
+    <dialog id="emailModal">
+      <article class="modal-card">
+        <header class="modal-header">
+          <h2>Chi tiết email</h2>
+          <button id="closeModalButton" type="button" aria-label="Đóng">×</button>
+        </header>
+        <dl class="details">
+          <div><dt>From</dt><dd id="detailFrom"></dd></div>
+          <div><dt>To</dt><dd id="detailTo"></dd></div>
+          <div><dt>Subject</dt><dd id="detailSubject"></dd></div>
+          <div><dt>Date</dt><dd id="detailDate"></dd></div>
+          <div><dt>Code</dt><dd id="detailCode"></dd></div>
+        </dl>
+        <pre id="detailBody"></pre>
+      </article>
+    </dialog>
+
+    <script src="/app.js"></script>
+  </body>
+</html>

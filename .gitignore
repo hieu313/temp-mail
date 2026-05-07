@@ -1,0 +1,19 @@
+# [link-manager] agent configs
+.cursor
+.codex
+.agent
+.claude
+.opencode
+plans
+CLAUDE.md
+GEMINI.md
+repomix-output.xml
+.repomixignore
+AGENTS.md
+release-manifest.json
+
+node_modules/
+emails.db
+emails.db-*
+npm-debug.log*
+.DS_Store
