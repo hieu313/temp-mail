@@ -1,5 +1,7 @@
 const express = require("express");
+const createDOMPurify = require("dompurify");
 const Database = require("better-sqlite3");
+const { JSDOM } = require("jsdom");
 const { simpleParser } = require("mailparser");
 const path = require("path");
 const { SMTPServer } = require("smtp-server");
@@ -8,6 +10,7 @@ const HTTP_PORT = Number(process.env.HTTP_PORT || 3000);
 const SMTP_PORT = Number(process.env.SMTP_PORT || 25);
 const DB_PATH = path.join(__dirname, "emails.db");
 const PUBLIC_DIR = path.join(__dirname, "public");
+const DOMPurify = createDOMPurify(new JSDOM("").window);
 
 const db = new Database(DB_PATH);
 db.pragma("journal_mode = WAL");
@@ -45,6 +48,11 @@ function seedWelcomeEmail() {
 
 function extractCode(body) {
   return body?.match(/\b\d{6}\b/)?.[0] ?? null;
+}
+
+function sanitizeBody(parsed) {
+  if (parsed.html) return DOMPurify.sanitize(parsed.html);
+  return parsed.text || "";
 }
 
 function logEmail(email) {
@@ -134,7 +142,7 @@ const smtpServer = new SMTPServer({
         return;
       }
 
-      const body = parsed.html || parsed.text || "";
+      const body = sanitizeBody(parsed);
       const email = {
         fromAddress: parsed.from?.value?.[0]?.address ?? parsed.from?.text ?? null,
         toAddress: parsed.to?.value?.[0]?.address ?? null,
