@@ -86,6 +86,20 @@ th {
   font-size: 14px;
 }
 
+.address-cell {
+  display: grid;
+  gap: 6px;
+}
+
+.address-cell span {
+  color: #6b7280;
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 700;
+  min-width: 42px;
+  text-transform: uppercase;
+}
+
 .actions {
   display: flex;
   flex-wrap: wrap;

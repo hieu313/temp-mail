@@ -30,6 +30,24 @@ function createCell(value) {
   return cell;
 }
 
+function createAddressLine(label, value) {
+  const line = document.createElement("div");
+  const labelElement = document.createElement("span");
+  labelElement.textContent = label;
+  line.append(labelElement, ` ${text(value)}`);
+  return line;
+}
+
+function createAddressCell(email) {
+  const cell = document.createElement("td");
+  cell.className = "address-cell";
+  cell.append(
+    createAddressLine("From", email.fromAddress),
+    createAddressLine("To", email.toAddress),
+  );
+  return cell;
+}
+
 function createActionButton(label, className, id) {
   const button = document.createElement("button");
   button.className = className;
@@ -56,8 +74,8 @@ function renderEmails(emails) {
     );
     actionsCell.append(actions);
     row.append(
-      createCell(email.fromAddress),
-      createCell(email.toAddress),
+      createCell(email.subject),
+      createAddressCell(email),
       createCell(email.code),
       actionsCell,
     );
