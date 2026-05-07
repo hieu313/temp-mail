@@ -47,6 +47,15 @@ function extractCode(body) {
   return body?.match(/\b\d{6}\b/)?.[0] ?? null;
 }
 
+function logEmail(email) {
+  console.log([
+    "=".repeat(72),
+    `[${email.createdAt}] NEW EMAIL`,
+    JSON.stringify(email, null, 2),
+    "=".repeat(72),
+  ].join("\n"));
+}
+
 seedWelcomeEmail();
 
 function mapEmail(row) {
@@ -136,7 +145,7 @@ const smtpServer = new SMTPServer({
       };
 
       insertEmail.run(email);
-      console.log(`[${email.createdAt}] mail ${email.fromAddress ?? "unknown"} -> ${email.toAddress ?? "unknown"}`);
+      logEmail(email);
       callback();
     });
   },
