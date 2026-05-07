@@ -14,6 +14,12 @@ function text(value) {
   return value || "—";
 }
 
+function truncate(value, maxLength = 48) {
+  const normalized = text(value);
+  if (normalized.length <= maxLength) return normalized;
+  return `${normalized.slice(0, maxLength - 1)}…`;
+}
+
 function renderStatus(message) {
   const row = document.createElement("tr");
   const cell = document.createElement("td");
@@ -24,17 +30,21 @@ function renderStatus(message) {
   emailRows.replaceChildren(row);
 }
 
-function createCell(value) {
+function createCell(value, options = {}) {
   const cell = document.createElement("td");
-  cell.textContent = text(value);
+  const content = options.truncate ? truncate(value, options.maxLength) : text(value);
+  cell.textContent = content;
+  if (content !== text(value)) cell.title = text(value);
   return cell;
 }
 
 function createAddressLine(label, value) {
   const line = document.createElement("div");
   const labelElement = document.createElement("span");
+  const content = truncate(value);
   labelElement.textContent = label;
-  line.append(labelElement, ` ${text(value)}`);
+  line.append(labelElement, ` ${content}`);
+  if (content !== text(value)) line.title = text(value);
   return line;
 }
 
@@ -45,6 +55,19 @@ function createAddressCell(email) {
     createAddressLine("From", email.fromAddress),
     createAddressLine("To", email.toAddress),
   );
+  return cell;
+}
+
+function createCodeCell(code) {
+  const cell = document.createElement("td");
+  const button = document.createElement("button");
+  button.className = "code-button";
+  button.type = "button";
+  button.dataset.code = code || "";
+  button.textContent = text(code);
+  button.title = code ? "Click để copy code" : "Không có code";
+  button.disabled = !code;
+  cell.append(button);
   return cell;
 }
 
@@ -74,9 +97,9 @@ function renderEmails(emails) {
     );
     actionsCell.append(actions);
     row.append(
-      createCell(email.subject),
+      createCell(email.subject, { truncate: true, maxLength: 64 }),
       createAddressCell(email),
-      createCell(email.code),
+      createCodeCell(email.code),
       actionsCell,
     );
     return row;
@@ -127,7 +150,26 @@ async function deleteEmail(id) {
   await loadEmails();
 }
 
+async function copyCode(button) {
+  if (!button.dataset.code) return;
+
+  await navigator.clipboard.writeText(button.dataset.code);
+  const originalText = button.textContent;
+  button.textContent = "Copied";
+  button.classList.add("copied");
+  setTimeout(() => {
+    button.textContent = originalText;
+    button.classList.remove("copied");
+  }, 900);
+}
+
 emailRows.addEventListener("click", (event) => {
+  const codeButton = event.target.closest("button[data-code]");
+  if (codeButton) {
+    copyCode(codeButton);
+    return;
+  }
+
   const button = event.target.closest("button[data-id]");
   if (!button) return;
 
