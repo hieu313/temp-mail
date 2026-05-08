@@ -28,6 +28,9 @@ let twoFactorSecret = "";
 let twoFactorRequestId = 0;
 let emailRequestId = 0;
 let savedMailboxRequestId = 0;
+let emailDetailRequestId = 0;
+let emailAbortController;
+let emailDetailAbortController;
 let twoFactorRefreshTimer;
 
 function text(value) {
@@ -270,12 +273,15 @@ function renderEmails(emails) {
 
 async function loadEmails() {
   const requestId = ++emailRequestId;
+  emailAbortController?.abort();
+  const abortController = new AbortController();
+  emailAbortController = abortController;
   renderStatus("Đang tải...");
   const query = searchInput.value.trim();
   const path = query ? `/api/emails/search?q=${encodeURIComponent(query)}` : "/api/emails";
 
   try {
-    const response = await fetch(path);
+    const response = await fetch(path, { signal: abortController.signal });
     if (requestId !== emailRequestId) return;
 
     if (!response.ok) {
@@ -286,26 +292,42 @@ async function loadEmails() {
     const emails = await response.json();
     if (requestId !== emailRequestId) return;
     renderEmails(emails);
-  } catch {
+  } catch (error) {
+    if (error.name === "AbortError") return;
     if (requestId === emailRequestId) renderStatus("Không tải được email.");
+  } finally {
+    if (emailAbortController === abortController) emailAbortController = null;
   }
 }
 
 async function showEmail(id) {
-  const response = await fetch(`/api/emails/${id}`);
+  const requestId = ++emailDetailRequestId;
+  emailDetailAbortController?.abort();
+  const abortController = new AbortController();
+  emailDetailAbortController = abortController;
 
-  if (!response.ok) {
-    alert("Không tìm thấy email.");
-    await loadEmails();
-    return;
+  try {
+    const response = await fetch(`/api/emails/${id}`, { signal: abortController.signal });
+    if (requestId !== emailDetailRequestId) return;
+
+    if (!response.ok) {
+      alert("Không tìm thấy email.");
+      await loadEmails();
+      return;
+    }
+
+    const email = await response.json();
+    if (requestId !== emailDetailRequestId) return;
+    detailFrom.textContent = text(email.fromAddress);
+    detailTo.textContent = text(email.toAddress);
+    detailSubject.textContent = text(email.subject);
+    detailBody.innerHTML = `<iframe srcdoc="${escapeHtml(email.body)}" sandbox="allow-same-origin"></iframe>`;
+    emailModal.showModal();
+  } catch (error) {
+    if (error.name !== "AbortError" && requestId === emailDetailRequestId) alert("Không tải được email.");
+  } finally {
+    if (emailDetailAbortController === abortController) emailDetailAbortController = null;
   }
-
-  const email = await response.json();
-  detailFrom.textContent = text(email.fromAddress);
-  detailTo.textContent = text(email.toAddress);
-  detailSubject.textContent = text(email.subject);
-  detailBody.innerHTML = `<iframe srcdoc="${escapeHtml(email.body)}" sandbox="allow-same-origin"></iframe>`;
-  emailModal.showModal();
 }
 
 async function deleteEmail(id) {
@@ -333,6 +355,16 @@ function closeSavedMailboxDrawer() {
   savedMailboxDrawer.setAttribute("aria-hidden", "true");
   savedMailboxDrawerBackdrop.hidden = true;
   openSavedMailboxDrawerButton.focus();
+}
+
+function clearEmailModal() {
+  emailDetailRequestId += 1;
+  emailDetailAbortController?.abort();
+  emailDetailAbortController = null;
+  detailFrom.textContent = "";
+  detailTo.textContent = "";
+  detailSubject.textContent = "";
+  detailBody.replaceChildren();
 }
 
 function openSavedMailboxModal() {
@@ -543,6 +575,7 @@ savedMailboxModal.addEventListener("close", () => openSavedMailboxModalButton.fo
 emailModal.addEventListener("click", (event) => {
   if (event.target === emailModal) emailModal.close();
 });
+emailModal.addEventListener("close", clearEmailModal);
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && savedMailboxDrawer.classList.contains("is-open") && !savedMailboxModal.open && !emailModal.open) {
     closeSavedMailboxDrawer();
