@@ -1,22 +1,38 @@
 const emailRows = document.querySelector("#emailRows");
 const searchInput = document.querySelector("#searchInput");
 const refreshButton = document.querySelector("#refreshButton");
-const openSavedMailboxDrawerButton = document.querySelector("#openSavedMailboxDrawerButton");
+const openSavedMailboxDrawerButton = document.querySelector(
+  "#openSavedMailboxDrawerButton",
+);
 const savedMailboxDrawer = document.querySelector("#savedMailboxDrawer");
-const savedMailboxDrawerBackdrop = document.querySelector("#savedMailboxDrawerBackdrop");
-const closeSavedMailboxDrawerButton = document.querySelector("#closeSavedMailboxDrawerButton");
+const savedMailboxDrawerBackdrop = document.querySelector(
+  "#savedMailboxDrawerBackdrop",
+);
+const closeSavedMailboxDrawerButton = document.querySelector(
+  "#closeSavedMailboxDrawerButton",
+);
 const twoFactorSecretInput = document.querySelector("#twoFactorSecretInput");
 const twoFactorCodeButton = document.querySelector("#twoFactorCodeButton");
 const emailModal = document.querySelector("#emailModal");
 const closeModalButton = document.querySelector("#closeModalButton");
 const savedMailboxList = document.querySelector("#savedMailboxList");
-const openSavedMailboxModalButton = document.querySelector("#openSavedMailboxModalButton");
+const openSavedMailboxModalButton = document.querySelector(
+  "#openSavedMailboxModalButton",
+);
 const savedMailboxModal = document.querySelector("#savedMailboxModal");
-const closeSavedMailboxModalButton = document.querySelector("#closeSavedMailboxModalButton");
+const closeSavedMailboxModalButton = document.querySelector(
+  "#closeSavedMailboxModalButton",
+);
 const savedMailboxForm = document.querySelector("#savedMailboxForm");
-const savedMailboxAddressInput = document.querySelector("#savedMailboxAddressInput");
-const savedMailboxReasonInput = document.querySelector("#savedMailboxReasonInput");
-const savedMailboxSubmitButton = document.querySelector("#savedMailboxSubmitButton");
+const savedMailboxAddressInput = document.querySelector(
+  "#savedMailboxAddressInput",
+);
+const savedMailboxReasonInput = document.querySelector(
+  "#savedMailboxReasonInput",
+);
+const savedMailboxSubmitButton = document.querySelector(
+  "#savedMailboxSubmitButton",
+);
 
 const detailFrom = document.querySelector("#detailFrom");
 const detailTo = document.querySelector("#detailTo");
@@ -44,7 +60,9 @@ function truncate(value, maxLength = 48) {
 }
 
 function escapeHtml(value) {
-  return String(value || "").replace(/&/g, "&amp;").replace(/"/g, "&quot;");
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;");
 }
 
 function renderStatus(message) {
@@ -60,7 +78,9 @@ function renderStatus(message) {
 function createCell(value, options = {}) {
   const cell = document.createElement("td");
   if (options.className) cell.className = options.className;
-  const content = options.truncate ? truncate(value, options.maxLength) : text(value);
+  const content = options.truncate
+    ? truncate(value, options.maxLength)
+    : text(value);
   cell.textContent = content;
   if (content !== text(value)) cell.title = text(value);
   return cell;
@@ -69,10 +89,17 @@ function createCell(value, options = {}) {
 function createAddressLine(label, value) {
   const line = document.createElement("div");
   const labelElement = document.createElement("span");
+  const contentElement = document.createElement("div");
   const content = truncate(value);
   labelElement.textContent = label;
-  line.append(labelElement, ` ${content}`);
-  if (content !== text(value)) line.title = text(value);
+  contentElement.textContent = content;
+  if (label === "To" && value) {
+    contentElement.dataset.copyAddress = text(value);
+    contentElement.title = "Click để copy email";
+  } else if (content !== text(value)) {
+    contentElement.title = text(value);
+  }
+  line.append(labelElement, contentElement);
   return line;
 }
 
@@ -211,15 +238,17 @@ function renderSavedMailboxes(mailboxes) {
 
 function updateSavedMailboxActiveState() {
   const query = searchInput.value.trim();
-  savedMailboxList.querySelectorAll(".saved-mailbox-button").forEach((button) => {
-    const isActive = button.dataset.address === query;
-    button.classList.toggle("is-active", isActive);
-    if (isActive) {
-      button.setAttribute("aria-current", "true");
-    } else {
-      button.removeAttribute("aria-current");
-    }
-  });
+  savedMailboxList
+    .querySelectorAll(".saved-mailbox-button")
+    .forEach((button) => {
+      const isActive = button.dataset.address === query;
+      button.classList.toggle("is-active", isActive);
+      if (isActive) {
+        button.setAttribute("aria-current", "true");
+      } else {
+        button.removeAttribute("aria-current");
+      }
+    });
 }
 
 async function loadSavedMailboxes() {
@@ -239,7 +268,8 @@ async function loadSavedMailboxes() {
     if (requestId !== savedMailboxRequestId) return;
     renderSavedMailboxes(mailboxes);
   } catch {
-    if (requestId === savedMailboxRequestId) renderSavedMailboxStatus("Không tải được saved mails.");
+    if (requestId === savedMailboxRequestId)
+      renderSavedMailboxStatus("Không tải được saved mails.");
   }
 }
 
@@ -249,26 +279,32 @@ function renderEmails(emails) {
     return;
   }
 
-  emailRows.replaceChildren(...emails.map((email) => {
-    const row = document.createElement("tr");
-    const actionsCell = document.createElement("td");
-    const actions = document.createElement("div");
-    actions.className = "actions";
-    actions.append(
-      createActionButton("Đọc", "view-button", email.id),
-      createActionButton("Xóa", "delete-button", email.id),
-    );
-    actionsCell.append(actions);
-    actionsCell.className = "actions-cell";
-    row.append(
-      createCell(email.subject, { className: "subject-cell", truncate: true, maxLength: 64 }),
-      createAddressCell(email),
-      createCodeCell(email.code),
-      createCreatedAtCell(email.createdAt),
-      actionsCell,
-    );
-    return row;
-  }));
+  emailRows.replaceChildren(
+    ...emails.map((email) => {
+      const row = document.createElement("tr");
+      const actionsCell = document.createElement("td");
+      const actions = document.createElement("div");
+      actions.className = "actions";
+      actions.append(
+        createActionButton("Đọc", "view-button", email.id),
+        createActionButton("Xóa", "delete-button", email.id),
+      );
+      actionsCell.append(actions);
+      actionsCell.className = "actions-cell";
+      row.append(
+        createCell(email.subject, {
+          className: "subject-cell",
+          truncate: true,
+          maxLength: 64,
+        }),
+        createAddressCell(email),
+        createCodeCell(email.code),
+        createCreatedAtCell(email.createdAt),
+        actionsCell,
+      );
+      return row;
+    }),
+  );
 }
 
 async function loadEmails() {
@@ -278,7 +314,9 @@ async function loadEmails() {
   emailAbortController = abortController;
   renderStatus("Đang tải...");
   const query = searchInput.value.trim();
-  const path = query ? `/api/emails/search?q=${encodeURIComponent(query)}` : "/api/emails";
+  const path = query
+    ? `/api/emails/search?q=${encodeURIComponent(query)}`
+    : "/api/emails";
 
   try {
     const response = await fetch(path, { signal: abortController.signal });
@@ -307,7 +345,9 @@ async function showEmail(id) {
   emailDetailAbortController = abortController;
 
   try {
-    const response = await fetch(`/api/emails/${id}`, { signal: abortController.signal });
+    const response = await fetch(`/api/emails/${id}`, {
+      signal: abortController.signal,
+    });
     if (requestId !== emailDetailRequestId) return;
 
     if (!response.ok) {
@@ -324,9 +364,11 @@ async function showEmail(id) {
     detailBody.innerHTML = `<iframe srcdoc="${escapeHtml(email.body)}" sandbox="allow-same-origin"></iframe>`;
     emailModal.showModal();
   } catch (error) {
-    if (error.name !== "AbortError" && requestId === emailDetailRequestId) alert("Không tải được email.");
+    if (error.name !== "AbortError" && requestId === emailDetailRequestId)
+      alert("Không tải được email.");
   } finally {
-    if (emailDetailAbortController === abortController) emailDetailAbortController = null;
+    if (emailDetailAbortController === abortController)
+      emailDetailAbortController = null;
   }
 }
 
@@ -407,7 +449,9 @@ async function deleteSavedMailbox(id) {
   if (!confirm("Xóa mail đã lưu này?")) return;
 
   try {
-    const response = await fetch(`/api/saved-mailboxes/${id}`, { method: "DELETE" });
+    const response = await fetch(`/api/saved-mailboxes/${id}`, {
+      method: "DELETE",
+    });
 
     if (!response.ok) {
       alert("Không xóa được mail đã lưu.");
@@ -427,7 +471,8 @@ async function copyCode(button) {
   button.textContent = "Copied";
   button.classList.add("copied");
   setTimeout(() => {
-    if (button.textContent === "Copied") button.textContent = button.dataset.code || "—";
+    if (button.textContent === "Copied")
+      button.textContent = button.dataset.code || "—";
     button.classList.remove("copied");
   }, 900);
 }
@@ -441,6 +486,18 @@ async function copySavedMailboxAddress(button) {
   setTimeout(() => {
     if (button.textContent === "Copied") button.textContent = "📋";
     button.classList.remove("copied");
+  }, 900);
+}
+
+async function copyAddressText(element) {
+  const address = element.dataset.copyAddress;
+  if (!address) return;
+
+  await navigator.clipboard.writeText(address);
+  element.textContent = "Copied";
+  setTimeout(() => {
+    if (element.isConnected && element.textContent === "Copied")
+      element.textContent = truncate(address);
   }, 900);
 }
 
@@ -485,9 +542,13 @@ async function recomputeTwoFactorCode() {
   }
 
   try {
-    const code = await window.twoFactorAuth.generateTotp(secret, { timestamp: startedAt });
+    const code = await window.twoFactorAuth.generateTotp(secret, {
+      timestamp: startedAt,
+    });
     if (requestId !== twoFactorRequestId || secret !== twoFactorSecret) return;
-    if (Math.floor(startedAt / periodMs) !== Math.floor(Date.now() / periodMs)) {
+    if (
+      Math.floor(startedAt / periodMs) !== Math.floor(Date.now() / periodMs)
+    ) {
       recomputeTwoFactorCode();
       return;
     }
@@ -507,6 +568,12 @@ emailRows.addEventListener("click", (event) => {
   const codeButton = event.target.closest("button[data-code]");
   if (codeButton) {
     copyCode(codeButton);
+    return;
+  }
+
+  const addressElement = event.target.closest("[data-copy-address]");
+  if (addressElement) {
+    copyAddressText(addressElement);
     return;
   }
 
@@ -556,7 +623,10 @@ refreshButton.addEventListener("click", () => {
   loadEmails();
 });
 openSavedMailboxDrawerButton.addEventListener("click", openSavedMailboxDrawer);
-closeSavedMailboxDrawerButton.addEventListener("click", closeSavedMailboxDrawer);
+closeSavedMailboxDrawerButton.addEventListener(
+  "click",
+  closeSavedMailboxDrawer,
+);
 savedMailboxDrawerBackdrop.addEventListener("click", closeSavedMailboxDrawer);
 openSavedMailboxModalButton.addEventListener("click", openSavedMailboxModal);
 savedMailboxForm.addEventListener("submit", createSavedMailbox);
@@ -564,20 +634,31 @@ closeSavedMailboxModalButton.addEventListener("click", () => {
   savedMailboxModal.close();
   openSavedMailboxModalButton.focus();
 });
-twoFactorSecretInput.addEventListener("input", () => setTwoFactorSecret(twoFactorSecretInput.value));
-twoFactorCodeButton.addEventListener("click", () => copyCode(twoFactorCodeButton));
+twoFactorSecretInput.addEventListener("input", () =>
+  setTwoFactorSecret(twoFactorSecretInput.value),
+);
+twoFactorCodeButton.addEventListener("click", () =>
+  copyCode(twoFactorCodeButton),
+);
 setInterval(loadEmails, 15000);
 closeModalButton.addEventListener("click", () => emailModal.close());
 savedMailboxModal.addEventListener("click", (event) => {
   if (event.target === savedMailboxModal) savedMailboxModal.close();
 });
-savedMailboxModal.addEventListener("close", () => openSavedMailboxModalButton.focus());
+savedMailboxModal.addEventListener("close", () =>
+  openSavedMailboxModalButton.focus(),
+);
 emailModal.addEventListener("click", (event) => {
   if (event.target === emailModal) emailModal.close();
 });
 emailModal.addEventListener("close", clearEmailModal);
 document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape" && savedMailboxDrawer.classList.contains("is-open") && !savedMailboxModal.open && !emailModal.open) {
+  if (
+    event.key === "Escape" &&
+    savedMailboxDrawer.classList.contains("is-open") &&
+    !savedMailboxModal.open &&
+    !emailModal.open
+  ) {
     closeSavedMailboxDrawer();
   }
 });

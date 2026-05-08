@@ -77,11 +77,15 @@ p {
 }
 
 #refreshButton,
-#openSavedMailboxDrawerButton,
-#openSavedMailboxModalButton,
 #savedMailboxSubmitButton,
 .view-button {
   background: #2563eb;
+  color: white;
+}
+
+#openSavedMailboxDrawerButton,
+#openSavedMailboxModalButton {
+  background: #16a34a;
   color: white;
 }
 
