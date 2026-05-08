@@ -27,9 +27,23 @@ db.prepare(`
   )
 `).run();
 
+db.prepare(`
+  CREATE TABLE IF NOT EXISTS saved_mailboxes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    address TEXT NOT NULL UNIQUE,
+    reason TEXT,
+    created_at TEXT NOT NULL
+  )
+`).run();
+
 const insertEmail = db.prepare(`
   INSERT INTO emails (from_address, to_address, subject, body, code, created_at)
   VALUES (@fromAddress, @toAddress, @subject, @body, @code, @createdAt)
+`);
+
+const insertSavedMailbox = db.prepare(`
+  INSERT INTO saved_mailboxes (address, reason, created_at)
+  VALUES (@address, @reason, @createdAt)
 `);
 
 function seedWelcomeEmail() {
@@ -56,6 +70,10 @@ function sanitizeBody(parsed) {
   return parsed.text || "";
 }
 
+function escapeLike(value) {
+  return value.replace(/[\\%_]/g, "\\$&");
+}
+
 function logEmail(email) {
   console.log([
     "=".repeat(72),
@@ -79,6 +97,42 @@ function mapEmail(row) {
   };
 }
 
+function mapSavedMailbox(row) {
+  return {
+    id: row.id,
+    address: row.address,
+    reason: row.reason,
+    createdAt: row.created_at,
+  };
+}
+
+function normalizeSavedMailboxInput(body) {
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    return { error: "Request body must be an object." };
+  }
+
+  if (typeof body.address !== "string") {
+    return { error: "Valid email address is required." };
+  }
+
+  if (body.reason != null && typeof body.reason !== "string") {
+    return { error: "Reason must be a string." };
+  }
+
+  const address = body.address.trim().toLowerCase();
+  const reason = body.reason?.trim() || null;
+
+  if (!address || address.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(address)) {
+    return { error: "Valid email address is required." };
+  }
+
+  if (reason && reason.length > 500) {
+    return { error: "Reason must be 500 characters or less." };
+  }
+
+  return { address, reason };
+}
+
 const app = express();
 app.use(express.json());
 app.use(express.static(PUBLIC_DIR));
@@ -90,6 +144,62 @@ app.post("/api/2fa/generate", (req, res) => {
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
+});
+
+app.get("/api/saved-mailboxes", (req, res) => {
+  const rows = db.prepare(`
+    SELECT id, address, reason, created_at
+    FROM saved_mailboxes
+    ORDER BY id DESC
+  `).all();
+
+  res.json(rows.map(mapSavedMailbox));
+});
+
+app.post("/api/saved-mailboxes", (req, res) => {
+  const savedMailbox = normalizeSavedMailboxInput(req.body);
+
+  if (savedMailbox.error) {
+    res.status(400).json({ error: savedMailbox.error });
+    return;
+  }
+
+  try {
+    const createdAt = new Date().toISOString();
+    const result = insertSavedMailbox.run({ ...savedMailbox, createdAt });
+    const row = db.prepare("SELECT * FROM saved_mailboxes WHERE id = ?").get(result.lastInsertRowid);
+    res.status(201).json(mapSavedMailbox(row));
+  } catch (error) {
+    if (error.code === "SQLITE_CONSTRAINT_UNIQUE") {
+      res.status(409).json({ error: "Saved mailbox already exists." });
+      return;
+    }
+
+    throw error;
+  }
+});
+
+app.delete("/api/saved-mailboxes/:id", (req, res) => {
+  if (!/^[1-9]\d*$/.test(req.params.id)) {
+    res.status(400).json({ error: "Valid saved mailbox id is required." });
+    return;
+  }
+
+  const id = Number(req.params.id);
+
+  if (!Number.isSafeInteger(id)) {
+    res.status(400).json({ error: "Valid saved mailbox id is required." });
+    return;
+  }
+
+  const result = db.prepare("DELETE FROM saved_mailboxes WHERE id = ?").run(id);
+
+  if (result.changes === 0) {
+    res.status(404).json({ error: "Saved mailbox not found" });
+    return;
+  }
+
+  res.status(204).end();
 });
 
 app.get("/api/emails", (req, res) => {
@@ -113,9 +223,9 @@ app.get("/api/emails/search", (req, res) => {
   const rows = db.prepare(`
     SELECT id, from_address, to_address, subject, code, created_at
     FROM emails
-    WHERE from_address LIKE @query OR to_address LIKE @query
+    WHERE from_address LIKE @query ESCAPE '\\' OR to_address LIKE @query ESCAPE '\\'
     ORDER BY id DESC
-  `).all({ query: `%${query}%` });
+  `).all({ query: `%${escapeLike(query)}%` });
 
   res.json(rows.map(mapEmail));
 });
@@ -140,6 +250,18 @@ app.delete("/api/emails/:id", (req, res) => {
   }
 
   res.status(204).end();
+});
+
+app.use((error, req, res, next) => {
+  if (res.headersSent) {
+    next(error);
+    return;
+  }
+
+  const status = Number.isInteger(error.status) && error.status >= 400 && error.status < 600 ? error.status : 500;
+  if (status >= 500) console.error(error);
+
+  res.status(status).json({ error: status >= 500 ? "Internal server error" : "Invalid request." });
 });
 
 const smtpServer = new SMTPServer({

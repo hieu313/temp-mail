@@ -19,38 +19,72 @@
         </div>
       </header>
 
-      <section class="card two-factor-card">
-        <div class="two-factor-field">
-          <input id="twoFactorSecretInput" type="text" placeholder=" " autocomplete="off" spellcheck="false">
-          <label for="twoFactorSecretInput">2FA secret</label>
-        </div>
-        <button id="twoFactorCodeButton" class="code-button" type="button" data-code="" disabled>—</button>
-      </section>
+      <div class="content-layout">
+        <aside class="card saved-mailboxes-card">
+          <header class="saved-mailboxes-header">
+            <h2>Saved mails</h2>
+            <button id="openSavedMailboxModalButton" type="button">Save mail</button>
+          </header>
+          <div id="savedMailboxList" class="saved-mailbox-list" role="list" aria-live="polite">
+            <p class="empty" role="listitem">Đang tải...</p>
+          </div>
+        </aside>
 
-      <section class="card">
-        <table>
-          <thead>
-            <tr>
-              <th>Subject</th>
-              <th>From / To</th>
-              <th>Code</th>
-              <th>Created</th>
-              <th>Thao tác</th>
-            </tr>
-          </thead>
-          <tbody id="emailRows">
-            <tr>
-              <td colspan="5" class="empty">Đang tải...</td>
-            </tr>
-          </tbody>
-        </table>
-      </section>
+        <div class="inbox-content">
+          <section class="card two-factor-card">
+            <div class="two-factor-field">
+              <input id="twoFactorSecretInput" type="text" placeholder=" " autocomplete="off" spellcheck="false">
+              <label for="twoFactorSecretInput">2FA secret</label>
+            </div>
+            <button id="twoFactorCodeButton" class="code-button" type="button" data-code="" disabled>—</button>
+          </section>
+
+          <section class="card">
+            <table>
+              <thead>
+                <tr>
+                  <th>Subject</th>
+                  <th>From / To</th>
+                  <th>Code</th>
+                  <th>Created</th>
+                  <th>Thao tác</th>
+                </tr>
+              </thead>
+              <tbody id="emailRows">
+                <tr>
+                  <td colspan="5" class="empty">Đang tải...</td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+        </div>
+      </div>
     </main>
 
-    <dialog id="emailModal">
+    <dialog id="savedMailboxModal" aria-labelledby="savedMailboxModalTitle">
       <article class="modal-card">
         <header class="modal-header">
-          <h2>Chi tiết email</h2>
+          <h2 id="savedMailboxModalTitle">Save mail</h2>
+          <button id="closeSavedMailboxModalButton" type="button" aria-label="Đóng">×</button>
+        </header>
+        <form id="savedMailboxForm" class="saved-mailbox-form">
+          <label>
+            Mail
+            <input id="savedMailboxAddressInput" type="email" required maxlength="254" autocomplete="off" placeholder="name@example.com">
+          </label>
+          <label>
+            Lý do lưu
+            <textarea id="savedMailboxReasonInput" maxlength="500" placeholder="Có thể bỏ trống"></textarea>
+          </label>
+          <button id="savedMailboxSubmitButton" type="submit">Lưu</button>
+        </form>
+      </article>
+    </dialog>
+
+    <dialog id="emailModal" aria-labelledby="emailModalTitle">
+      <article class="modal-card">
+        <header class="modal-header">
+          <h2 id="emailModalTitle">Chi tiết email</h2>
           <button id="closeModalButton" type="button" aria-label="Đóng">×</button>
         </header>
         <dl class="details">

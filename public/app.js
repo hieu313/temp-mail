@@ -5,6 +5,14 @@ const twoFactorSecretInput = document.querySelector("#twoFactorSecretInput");
 const twoFactorCodeButton = document.querySelector("#twoFactorCodeButton");
 const emailModal = document.querySelector("#emailModal");
 const closeModalButton = document.querySelector("#closeModalButton");
+const savedMailboxList = document.querySelector("#savedMailboxList");
+const openSavedMailboxModalButton = document.querySelector("#openSavedMailboxModalButton");
+const savedMailboxModal = document.querySelector("#savedMailboxModal");
+const closeSavedMailboxModalButton = document.querySelector("#closeSavedMailboxModalButton");
+const savedMailboxForm = document.querySelector("#savedMailboxForm");
+const savedMailboxAddressInput = document.querySelector("#savedMailboxAddressInput");
+const savedMailboxReasonInput = document.querySelector("#savedMailboxReasonInput");
+const savedMailboxSubmitButton = document.querySelector("#savedMailboxSubmitButton");
 
 const detailFrom = document.querySelector("#detailFrom");
 const detailTo = document.querySelector("#detailTo");
@@ -14,6 +22,8 @@ const detailBody = document.querySelector("#detailBody");
 const TOTP_PERIOD_SECONDS = 30;
 let twoFactorSecret = "";
 let twoFactorRequestId = 0;
+let emailRequestId = 0;
+let savedMailboxRequestId = 0;
 let twoFactorRefreshTimer;
 
 function text(value) {
@@ -114,6 +124,90 @@ function createActionButton(label, className, id) {
   return button;
 }
 
+function renderSavedMailboxStatus(message) {
+  const empty = document.createElement("p");
+  empty.className = "empty";
+  empty.setAttribute("role", "listitem");
+  empty.textContent = message;
+  savedMailboxList.replaceChildren(empty);
+}
+
+function createSavedMailboxItem(mailbox) {
+  const item = document.createElement("div");
+  const button = document.createElement("button");
+  const address = document.createElement("strong");
+  const deleteButton = document.createElement("button");
+
+  item.className = "saved-mailbox-item";
+  item.setAttribute("role", "listitem");
+  button.className = "saved-mailbox-button";
+  button.type = "button";
+  button.dataset.address = mailbox.address;
+  if (searchInput.value.trim() === mailbox.address) {
+    button.classList.add("is-active");
+    button.setAttribute("aria-current", "true");
+  }
+  address.textContent = mailbox.address;
+  button.append(address);
+
+  if (mailbox.reason) {
+    const reason = document.createElement("span");
+    reason.textContent = mailbox.reason;
+    button.append(reason);
+  }
+
+  deleteButton.className = "delete-saved-mailbox-button";
+  deleteButton.type = "button";
+  deleteButton.dataset.id = mailbox.id;
+  deleteButton.setAttribute("aria-label", `Xóa ${mailbox.address}`);
+  deleteButton.textContent = "Xóa";
+  item.append(button, deleteButton);
+  return item;
+}
+
+function renderSavedMailboxes(mailboxes) {
+  if (mailboxes.length === 0) {
+    renderSavedMailboxStatus("Chưa lưu mail.");
+    return;
+  }
+
+  savedMailboxList.replaceChildren(...mailboxes.map(createSavedMailboxItem));
+}
+
+function updateSavedMailboxActiveState() {
+  const query = searchInput.value.trim();
+  savedMailboxList.querySelectorAll(".saved-mailbox-button").forEach((button) => {
+    const isActive = button.dataset.address === query;
+    button.classList.toggle("is-active", isActive);
+    if (isActive) {
+      button.setAttribute("aria-current", "true");
+    } else {
+      button.removeAttribute("aria-current");
+    }
+  });
+}
+
+async function loadSavedMailboxes() {
+  const requestId = ++savedMailboxRequestId;
+  renderSavedMailboxStatus("Đang tải...");
+
+  try {
+    const response = await fetch("/api/saved-mailboxes");
+    if (requestId !== savedMailboxRequestId) return;
+
+    if (!response.ok) {
+      renderSavedMailboxStatus("Không tải được saved mails.");
+      return;
+    }
+
+    const mailboxes = await response.json();
+    if (requestId !== savedMailboxRequestId) return;
+    renderSavedMailboxes(mailboxes);
+  } catch {
+    if (requestId === savedMailboxRequestId) renderSavedMailboxStatus("Không tải được saved mails.");
+  }
+}
+
 function renderEmails(emails) {
   if (emails.length === 0) {
     renderStatus("Chưa có email.");
@@ -143,17 +237,26 @@ function renderEmails(emails) {
 }
 
 async function loadEmails() {
+  const requestId = ++emailRequestId;
   renderStatus("Đang tải...");
   const query = searchInput.value.trim();
   const path = query ? `/api/emails/search?q=${encodeURIComponent(query)}` : "/api/emails";
-  const response = await fetch(path);
 
-  if (!response.ok) {
-    renderStatus("Không tải được email.");
-    return;
+  try {
+    const response = await fetch(path);
+    if (requestId !== emailRequestId) return;
+
+    if (!response.ok) {
+      renderStatus("Không tải được email.");
+      return;
+    }
+
+    const emails = await response.json();
+    if (requestId !== emailRequestId) return;
+    renderEmails(emails);
+  } catch {
+    if (requestId === emailRequestId) renderStatus("Không tải được email.");
   }
-
-  renderEmails(await response.json());
 }
 
 async function showEmail(id) {
@@ -184,6 +287,59 @@ async function deleteEmail(id) {
   }
 
   await loadEmails();
+}
+
+function openSavedMailboxModal() {
+  savedMailboxForm.reset();
+  savedMailboxModal.showModal();
+  savedMailboxAddressInput.focus();
+}
+
+async function createSavedMailbox(event) {
+  event.preventDefault();
+  savedMailboxSubmitButton.disabled = true;
+
+  try {
+    const response = await fetch("/api/saved-mailboxes", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        address: savedMailboxAddressInput.value,
+        reason: savedMailboxReasonInput.value,
+      }),
+    });
+
+    if (!response.ok) {
+      const result = await response.json().catch(() => ({}));
+      alert(result.error || "Không lưu được mail.");
+      return;
+    }
+
+    savedMailboxModal.close();
+    openSavedMailboxModalButton.focus();
+    await loadSavedMailboxes();
+  } catch {
+    alert("Không lưu được mail.");
+  } finally {
+    savedMailboxSubmitButton.disabled = false;
+  }
+}
+
+async function deleteSavedMailbox(id) {
+  if (!confirm("Xóa mail đã lưu này?")) return;
+
+  try {
+    const response = await fetch(`/api/saved-mailboxes/${id}`, { method: "DELETE" });
+
+    if (!response.ok) {
+      alert("Không xóa được mail đã lưu.");
+      return;
+    }
+
+    await loadSavedMailboxes();
+  } catch {
+    alert("Không xóa được mail đã lưu.");
+  }
 }
 
 async function copyCode(button) {
@@ -277,19 +433,49 @@ emailRows.addEventListener("click", (event) => {
   }
 });
 
+savedMailboxList.addEventListener("click", (event) => {
+  const deleteButton = event.target.closest(".delete-saved-mailbox-button");
+  if (deleteButton) {
+    deleteSavedMailbox(deleteButton.dataset.id);
+    return;
+  }
+
+  const button = event.target.closest(".saved-mailbox-button");
+  if (!button) return;
+
+  searchInput.value = button.dataset.address;
+  updateSavedMailboxActiveState();
+  loadEmails();
+});
+
 let searchTimer;
 searchInput.addEventListener("input", () => {
   clearTimeout(searchTimer);
+  updateSavedMailboxActiveState();
   searchTimer = setTimeout(loadEmails, 250);
 });
-refreshButton.addEventListener("click", loadEmails);
+refreshButton.addEventListener("click", () => {
+  loadSavedMailboxes();
+  loadEmails();
+});
+openSavedMailboxModalButton.addEventListener("click", openSavedMailboxModal);
+savedMailboxForm.addEventListener("submit", createSavedMailbox);
+closeSavedMailboxModalButton.addEventListener("click", () => {
+  savedMailboxModal.close();
+  openSavedMailboxModalButton.focus();
+});
 twoFactorSecretInput.addEventListener("input", () => setTwoFactorSecret(twoFactorSecretInput.value));
 twoFactorCodeButton.addEventListener("click", () => copyCode(twoFactorCodeButton));
 setInterval(loadEmails, 15000);
 closeModalButton.addEventListener("click", () => emailModal.close());
+savedMailboxModal.addEventListener("click", (event) => {
+  if (event.target === savedMailboxModal) savedMailboxModal.close();
+});
+savedMailboxModal.addEventListener("close", () => openSavedMailboxModalButton.focus());
 emailModal.addEventListener("click", (event) => {
   if (event.target === emailModal) emailModal.close();
 });
 
 setTwoFactorSecret(twoFactorSecretInput.value);
+loadSavedMailboxes();
 loadEmails();
