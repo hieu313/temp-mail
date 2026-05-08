@@ -1,6 +1,10 @@
 const emailRows = document.querySelector("#emailRows");
 const searchInput = document.querySelector("#searchInput");
 const refreshButton = document.querySelector("#refreshButton");
+const openSavedMailboxDrawerButton = document.querySelector("#openSavedMailboxDrawerButton");
+const savedMailboxDrawer = document.querySelector("#savedMailboxDrawer");
+const savedMailboxDrawerBackdrop = document.querySelector("#savedMailboxDrawerBackdrop");
+const closeSavedMailboxDrawerButton = document.querySelector("#closeSavedMailboxDrawerButton");
 const twoFactorSecretInput = document.querySelector("#twoFactorSecretInput");
 const twoFactorCodeButton = document.querySelector("#twoFactorCodeButton");
 const emailModal = document.querySelector("#emailModal");
@@ -132,11 +136,25 @@ function renderSavedMailboxStatus(message) {
   savedMailboxList.replaceChildren(empty);
 }
 
+function splitMailboxAddress(address) {
+  const atIndex = address.indexOf("@");
+  if (atIndex === -1) return { prefix: address, domain: "" };
+  return {
+    prefix: address.slice(0, atIndex),
+    domain: address.slice(atIndex),
+  };
+}
+
 function createSavedMailboxItem(mailbox) {
   const item = document.createElement("div");
   const button = document.createElement("button");
-  const address = document.createElement("strong");
+  const address = document.createElement("span");
+  const prefix = document.createElement("strong");
+  const domain = document.createElement("span");
+  const actions = document.createElement("div");
+  const copyButton = document.createElement("button");
   const deleteButton = document.createElement("button");
+  const addressParts = splitMailboxAddress(mailbox.address);
 
   item.className = "saved-mailbox-item";
   item.setAttribute("role", "listitem");
@@ -147,21 +165,35 @@ function createSavedMailboxItem(mailbox) {
     button.classList.add("is-active");
     button.setAttribute("aria-current", "true");
   }
-  address.textContent = mailbox.address;
+
+  address.className = "saved-mailbox-address";
+  prefix.className = "mailbox-prefix";
+  prefix.textContent = addressParts.prefix;
+  domain.className = "mailbox-domain";
+  domain.textContent = addressParts.domain;
+  address.append(prefix, domain);
   button.append(address);
 
   if (mailbox.reason) {
     const reason = document.createElement("span");
+    reason.className = "saved-mailbox-reason";
     reason.textContent = mailbox.reason;
     button.append(reason);
   }
 
+  actions.className = "saved-mailbox-item-actions";
+  copyButton.className = "copy-saved-mailbox-button";
+  copyButton.type = "button";
+  copyButton.dataset.address = mailbox.address;
+  copyButton.setAttribute("aria-label", `Copy ${mailbox.address}`);
+  copyButton.textContent = "📋";
   deleteButton.className = "delete-saved-mailbox-button";
   deleteButton.type = "button";
   deleteButton.dataset.id = mailbox.id;
   deleteButton.setAttribute("aria-label", `Xóa ${mailbox.address}`);
   deleteButton.textContent = "Xóa";
-  item.append(button, deleteButton);
+  actions.append(copyButton, deleteButton);
+  item.append(button, actions);
   return item;
 }
 
@@ -289,6 +321,20 @@ async function deleteEmail(id) {
   await loadEmails();
 }
 
+function openSavedMailboxDrawer() {
+  savedMailboxDrawer.classList.add("is-open");
+  savedMailboxDrawer.removeAttribute("aria-hidden");
+  savedMailboxDrawerBackdrop.hidden = false;
+  savedMailboxDrawer.focus();
+}
+
+function closeSavedMailboxDrawer() {
+  savedMailboxDrawer.classList.remove("is-open");
+  savedMailboxDrawer.setAttribute("aria-hidden", "true");
+  savedMailboxDrawerBackdrop.hidden = true;
+  openSavedMailboxDrawerButton.focus();
+}
+
 function openSavedMailboxModal() {
   savedMailboxForm.reset();
   savedMailboxModal.showModal();
@@ -350,6 +396,18 @@ async function copyCode(button) {
   button.classList.add("copied");
   setTimeout(() => {
     if (button.textContent === "Copied") button.textContent = button.dataset.code || "—";
+    button.classList.remove("copied");
+  }, 900);
+}
+
+async function copySavedMailboxAddress(button) {
+  if (!button.dataset.address) return;
+
+  await navigator.clipboard.writeText(button.dataset.address);
+  button.textContent = "Copied";
+  button.classList.add("copied");
+  setTimeout(() => {
+    if (button.textContent === "Copied") button.textContent = "📋";
     button.classList.remove("copied");
   }, 900);
 }
@@ -434,6 +492,12 @@ emailRows.addEventListener("click", (event) => {
 });
 
 savedMailboxList.addEventListener("click", (event) => {
+  const copyButton = event.target.closest(".copy-saved-mailbox-button");
+  if (copyButton) {
+    copySavedMailboxAddress(copyButton);
+    return;
+  }
+
   const deleteButton = event.target.closest(".delete-saved-mailbox-button");
   if (deleteButton) {
     deleteSavedMailbox(deleteButton.dataset.id);
@@ -445,6 +509,7 @@ savedMailboxList.addEventListener("click", (event) => {
 
   searchInput.value = button.dataset.address;
   updateSavedMailboxActiveState();
+  closeSavedMailboxDrawer();
   loadEmails();
 });
 
@@ -458,6 +523,9 @@ refreshButton.addEventListener("click", () => {
   loadSavedMailboxes();
   loadEmails();
 });
+openSavedMailboxDrawerButton.addEventListener("click", openSavedMailboxDrawer);
+closeSavedMailboxDrawerButton.addEventListener("click", closeSavedMailboxDrawer);
+savedMailboxDrawerBackdrop.addEventListener("click", closeSavedMailboxDrawer);
 openSavedMailboxModalButton.addEventListener("click", openSavedMailboxModal);
 savedMailboxForm.addEventListener("submit", createSavedMailbox);
 closeSavedMailboxModalButton.addEventListener("click", () => {
@@ -474,6 +542,11 @@ savedMailboxModal.addEventListener("click", (event) => {
 savedMailboxModal.addEventListener("close", () => openSavedMailboxModalButton.focus());
 emailModal.addEventListener("click", (event) => {
   if (event.target === emailModal) emailModal.close();
+});
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && savedMailboxDrawer.classList.contains("is-open") && !savedMailboxModal.open && !emailModal.open) {
+    closeSavedMailboxDrawer();
+  }
 });
 
 setTwoFactorSecret(twoFactorSecretInput.value);
