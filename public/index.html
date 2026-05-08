@@ -20,7 +20,10 @@
       </header>
 
       <section class="card two-factor-card">
-        <input id="twoFactorSecretInput" type="text" placeholder="2FA secret" autocomplete="off" spellcheck="false">
+        <div class="two-factor-field">
+          <input id="twoFactorSecretInput" type="text" placeholder=" " autocomplete="off" spellcheck="false">
+          <label for="twoFactorSecretInput">2FA secret</label>
+        </div>
         <button id="twoFactorCodeButton" class="code-button" type="button" data-code="" disabled>—</button>
       </section>
 

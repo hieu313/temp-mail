@@ -92,9 +92,38 @@ p {
   padding: 16px;
 }
 
-.two-factor-card #twoFactorSecretInput {
+.two-factor-field {
   flex: 1;
   min-width: 0;
+  position: relative;
+}
+
+.two-factor-field #twoFactorSecretInput {
+  box-sizing: border-box;
+  padding: 16px 12px 6px;
+  width: 100%;
+}
+
+.two-factor-field #twoFactorSecretInput::placeholder {
+  color: transparent;
+}
+
+.two-factor-field label {
+  color: #6b7280;
+  left: 12px;
+  pointer-events: none;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  transition: color 160ms ease, font-size 160ms ease, top 160ms ease, transform 160ms ease;
+}
+
+.two-factor-field #twoFactorSecretInput:focus + label,
+.two-factor-field #twoFactorSecretInput:not(:placeholder-shown) + label {
+  color: #2563eb;
+  font-size: 12px;
+  top: 5px;
+  transform: none;
 }
 
 .two-factor-card #twoFactorCodeButton {
@@ -305,7 +334,7 @@ dd {
     flex-wrap: wrap;
   }
 
-  .two-factor-card #twoFactorSecretInput {
+  .two-factor-card .two-factor-field {
     flex-basis: 100%;
   }
 
