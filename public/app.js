@@ -36,6 +36,7 @@ const savedMailboxSubmitButton = document.querySelector(
 
 const detailFrom = document.querySelector("#detailFrom");
 const detailTo = document.querySelector("#detailTo");
+const saveDetailToButton = document.querySelector("#saveDetailToButton");
 const detailSubject = document.querySelector("#detailSubject");
 const detailBody = document.querySelector("#detailBody");
 
@@ -47,6 +48,7 @@ let savedMailboxRequestId = 0;
 let emailDetailRequestId = 0;
 let emailAbortController;
 let emailDetailAbortController;
+let savedMailboxModalReturnFocusElement;
 let twoFactorRefreshTimer;
 
 function text(value) {
@@ -360,6 +362,8 @@ async function showEmail(id) {
     if (requestId !== emailDetailRequestId) return;
     detailFrom.textContent = text(email.fromAddress);
     detailTo.textContent = text(email.toAddress);
+    saveDetailToButton.dataset.address = email.toAddress || "";
+    saveDetailToButton.disabled = !email.toAddress;
     detailSubject.textContent = text(email.subject);
     detailBody.innerHTML = `<iframe srcdoc="${escapeHtml(email.body)}" sandbox="allow-same-origin"></iframe>`;
     emailModal.showModal();
@@ -405,14 +409,30 @@ function clearEmailModal() {
   emailDetailAbortController = null;
   detailFrom.textContent = "";
   detailTo.textContent = "";
+  saveDetailToButton.dataset.address = "";
+  saveDetailToButton.disabled = true;
   detailSubject.textContent = "";
   detailBody.replaceChildren();
 }
 
-function openSavedMailboxModal() {
+function openSavedMailboxModal(address) {
+  const initialAddress = typeof address === "string" ? address : "";
+  savedMailboxModalReturnFocusElement = document.activeElement;
   savedMailboxForm.reset();
+  savedMailboxAddressInput.value = initialAddress;
   savedMailboxModal.showModal();
-  savedMailboxAddressInput.focus();
+  if (initialAddress) {
+    savedMailboxReasonInput.focus();
+  } else {
+    savedMailboxAddressInput.focus();
+  }
+}
+
+function restoreSavedMailboxModalFocus() {
+  if (savedMailboxModalReturnFocusElement?.isConnected) {
+    savedMailboxModalReturnFocusElement.focus();
+  }
+  savedMailboxModalReturnFocusElement = null;
 }
 
 async function createSavedMailbox(event) {
@@ -436,7 +456,6 @@ async function createSavedMailbox(event) {
     }
 
     savedMailboxModal.close();
-    openSavedMailboxModalButton.focus();
     await loadSavedMailboxes();
   } catch {
     alert("Không lưu được mail.");
@@ -629,10 +648,12 @@ closeSavedMailboxDrawerButton.addEventListener(
 );
 savedMailboxDrawerBackdrop.addEventListener("click", closeSavedMailboxDrawer);
 openSavedMailboxModalButton.addEventListener("click", openSavedMailboxModal);
+saveDetailToButton.addEventListener("click", () => {
+  openSavedMailboxModal(saveDetailToButton.dataset.address);
+});
 savedMailboxForm.addEventListener("submit", createSavedMailbox);
 closeSavedMailboxModalButton.addEventListener("click", () => {
   savedMailboxModal.close();
-  openSavedMailboxModalButton.focus();
 });
 twoFactorSecretInput.addEventListener("input", () =>
   setTwoFactorSecret(twoFactorSecretInput.value),
@@ -645,9 +666,7 @@ closeModalButton.addEventListener("click", () => emailModal.close());
 savedMailboxModal.addEventListener("click", (event) => {
   if (event.target === savedMailboxModal) savedMailboxModal.close();
 });
-savedMailboxModal.addEventListener("close", () =>
-  openSavedMailboxModalButton.focus(),
-);
+savedMailboxModal.addEventListener("close", restoreSavedMailboxModalFocus);
 emailModal.addEventListener("click", (event) => {
   if (event.target === emailModal) emailModal.close();
 });

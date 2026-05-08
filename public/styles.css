@@ -505,6 +505,24 @@ dd {
   overflow-wrap: anywhere;
 }
 
+.detail-address-row {
+  align-items: center;
+  display: inline-flex;
+  gap: 8px;
+}
+
+#saveDetailToButton {
+  background: #dcfce7;
+  color: #166534;
+  flex: 0 0 auto;
+  padding: 6px 8px;
+}
+
+#saveDetailToButton:disabled {
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
 .mail-body iframe {
   border: 1px solid #e5e7eb;
   border-radius: 12px;
