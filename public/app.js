@@ -11,6 +11,11 @@ const detailTo = document.querySelector("#detailTo");
 const detailSubject = document.querySelector("#detailSubject");
 const detailBody = document.querySelector("#detailBody");
 
+const TOTP_PERIOD_SECONDS = 30;
+let twoFactorSecret = "";
+let twoFactorRequestId = 0;
+let twoFactorRefreshTimer;
+
 function text(value) {
   return value || "—";
 }
@@ -185,25 +190,69 @@ async function copyCode(button) {
   if (!button.dataset.code) return;
 
   await navigator.clipboard.writeText(button.dataset.code);
-  const originalText = button.textContent;
   button.textContent = "Copied";
   button.classList.add("copied");
   setTimeout(() => {
-    button.textContent = originalText;
+    if (button.textContent === "Copied") button.textContent = button.dataset.code || "—";
     button.classList.remove("copied");
   }, 900);
 }
 
-async function generateTwoFactorCode() {
-  const secret = twoFactorSecretInput.value.trim();
-  if (!secret) return;
+function resetTwoFactorCode() {
+  twoFactorCodeButton.dataset.code = "";
+  twoFactorCodeButton.textContent = "—";
+  twoFactorCodeButton.disabled = true;
+}
+
+function scheduleTwoFactorRefresh() {
+  clearTimeout(twoFactorRefreshTimer);
+  if (!twoFactorSecret) return;
+
+  const periodMs = TOTP_PERIOD_SECONDS * 1000;
+  const delay = periodMs - (Date.now() % periodMs) + 100;
+  twoFactorRefreshTimer = setTimeout(recomputeTwoFactorCode, delay);
+}
+
+function setTwoFactorSecret(secret) {
+  const normalizedSecret = window.twoFactorAuth.normalizeSecret(secret);
+  if (normalizedSecret === twoFactorSecret) return;
+
+  twoFactorSecret = normalizedSecret;
+  twoFactorRequestId += 1;
+  clearTimeout(twoFactorRefreshTimer);
+  resetTwoFactorCode();
+
+  if (!twoFactorSecret) return;
+
+  recomputeTwoFactorCode();
+}
+
+async function recomputeTwoFactorCode() {
+  const requestId = ++twoFactorRequestId;
+  const secret = twoFactorSecret;
+  const periodMs = TOTP_PERIOD_SECONDS * 1000;
+  const startedAt = Date.now();
+
+  if (!secret) {
+    resetTwoFactorCode();
+    return;
+  }
 
   try {
-    const code = await window.twoFactorAuth.generateTotp(secret);
+    const code = await window.twoFactorAuth.generateTotp(secret, { timestamp: startedAt });
+    if (requestId !== twoFactorRequestId || secret !== twoFactorSecret) return;
+    if (Math.floor(startedAt / periodMs) !== Math.floor(Date.now() / periodMs)) {
+      recomputeTwoFactorCode();
+      return;
+    }
+
     twoFactorCodeButton.dataset.code = code;
     twoFactorCodeButton.textContent = code;
     twoFactorCodeButton.disabled = false;
+    scheduleTwoFactorRefresh();
   } catch (error) {
+    if (requestId !== twoFactorRequestId || secret !== twoFactorSecret) return;
+    resetTwoFactorCode();
     alert(error.message);
   }
 }
@@ -234,7 +283,7 @@ searchInput.addEventListener("input", () => {
   searchTimer = setTimeout(loadEmails, 250);
 });
 refreshButton.addEventListener("click", loadEmails);
-twoFactorSecretInput.addEventListener("input", generateTwoFactorCode);
+twoFactorSecretInput.addEventListener("input", () => setTwoFactorSecret(twoFactorSecretInput.value));
 twoFactorCodeButton.addEventListener("click", () => copyCode(twoFactorCodeButton));
 setInterval(loadEmails, 15000);
 closeModalButton.addEventListener("click", () => emailModal.close());
@@ -242,4 +291,5 @@ emailModal.addEventListener("click", (event) => {
   if (event.target === emailModal) emailModal.close();
 });
 
+setTwoFactorSecret(twoFactorSecretInput.value);
 loadEmails();
