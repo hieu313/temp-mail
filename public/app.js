@@ -20,6 +20,7 @@ const openSavedMailboxModalButton = document.querySelector(
   "#openSavedMailboxModalButton",
 );
 const savedMailboxModal = document.querySelector("#savedMailboxModal");
+const savedMailboxModalTitle = document.querySelector("#savedMailboxModalTitle");
 const closeSavedMailboxModalButton = document.querySelector(
   "#closeSavedMailboxModalButton",
 );
@@ -48,6 +49,7 @@ let savedMailboxRequestId = 0;
 let emailDetailRequestId = 0;
 let emailAbortController;
 let emailDetailAbortController;
+let editingSavedMailboxId;
 let savedMailboxModalReturnFocusElement;
 let twoFactorRefreshTimer;
 
@@ -184,7 +186,7 @@ function createSavedMailboxItem(mailbox) {
   const prefix = document.createElement("strong");
   const domain = document.createElement("span");
   const actions = document.createElement("div");
-  const copyButton = document.createElement("button");
+  const editButton = document.createElement("button");
   const deleteButton = document.createElement("button");
   const addressParts = splitMailboxAddress(mailbox.address);
 
@@ -214,17 +216,18 @@ function createSavedMailboxItem(mailbox) {
   }
 
   actions.className = "saved-mailbox-item-actions";
-  copyButton.className = "copy-saved-mailbox-button";
-  copyButton.type = "button";
-  copyButton.dataset.address = mailbox.address;
-  copyButton.setAttribute("aria-label", `Copy ${mailbox.address}`);
-  copyButton.textContent = "📋";
+  editButton.className = "edit-saved-mailbox-button";
+  editButton.type = "button";
+  editButton.dataset.id = mailbox.id;
+  editButton.dataset.address = mailbox.address;
+  editButton.dataset.reason = mailbox.reason || "";
+  editButton.textContent = "Sửa";
   deleteButton.className = "delete-saved-mailbox-button";
   deleteButton.type = "button";
   deleteButton.dataset.id = mailbox.id;
   deleteButton.setAttribute("aria-label", `Xóa ${mailbox.address}`);
   deleteButton.textContent = "Xóa";
-  actions.append(copyButton, deleteButton);
+  actions.append(editButton, deleteButton);
   item.append(button, actions);
   return item;
 }
@@ -417,8 +420,12 @@ function clearEmailModal() {
 
 function openSavedMailboxModal(address) {
   const initialAddress = typeof address === "string" ? address : "";
+  editingSavedMailboxId = null;
   savedMailboxModalReturnFocusElement = document.activeElement;
   savedMailboxForm.reset();
+  savedMailboxModalTitle.textContent = "Save mail";
+  savedMailboxSubmitButton.textContent = "Lưu";
+  savedMailboxAddressInput.disabled = false;
   savedMailboxAddressInput.value = initialAddress;
   savedMailboxModal.showModal();
   if (initialAddress) {
@@ -428,6 +435,19 @@ function openSavedMailboxModal(address) {
   }
 }
 
+function openEditSavedMailboxModal(mailbox) {
+  editingSavedMailboxId = mailbox.id;
+  savedMailboxModalReturnFocusElement = document.activeElement;
+  savedMailboxForm.reset();
+  savedMailboxModalTitle.textContent = "Sửa lý do lưu";
+  savedMailboxSubmitButton.textContent = "Cập nhật";
+  savedMailboxAddressInput.disabled = true;
+  savedMailboxAddressInput.value = mailbox.address;
+  savedMailboxReasonInput.value = mailbox.reason;
+  savedMailboxModal.showModal();
+  savedMailboxReasonInput.focus();
+}
+
 function restoreSavedMailboxModalFocus() {
   if (savedMailboxModalReturnFocusElement?.isConnected) {
     savedMailboxModalReturnFocusElement.focus();
@@ -435,13 +455,14 @@ function restoreSavedMailboxModalFocus() {
   savedMailboxModalReturnFocusElement = null;
 }
 
-async function createSavedMailbox(event) {
+async function submitSavedMailboxForm(event) {
   event.preventDefault();
   savedMailboxSubmitButton.disabled = true;
 
   try {
-    const response = await fetch("/api/saved-mailboxes", {
-      method: "POST",
+    const isEditing = Boolean(editingSavedMailboxId);
+    const response = await fetch(isEditing ? `/api/saved-mailboxes/${editingSavedMailboxId}` : "/api/saved-mailboxes", {
+      method: isEditing ? "PATCH" : "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         address: savedMailboxAddressInput.value,
@@ -451,14 +472,14 @@ async function createSavedMailbox(event) {
 
     if (!response.ok) {
       const result = await response.json().catch(() => ({}));
-      alert(result.error || "Không lưu được mail.");
+      alert(result.error || (isEditing ? "Không cập nhật được lý do." : "Không lưu được mail."));
       return;
     }
 
     savedMailboxModal.close();
     await loadSavedMailboxes();
   } catch {
-    alert("Không lưu được mail.");
+    alert(editingSavedMailboxId ? "Không cập nhật được lý do." : "Không lưu được mail.");
   } finally {
     savedMailboxSubmitButton.disabled = false;
   }
@@ -492,18 +513,6 @@ async function copyCode(button) {
   setTimeout(() => {
     if (button.textContent === "Copied")
       button.textContent = button.dataset.code || "—";
-    button.classList.remove("copied");
-  }, 900);
-}
-
-async function copySavedMailboxAddress(button) {
-  if (!button.dataset.address) return;
-
-  await navigator.clipboard.writeText(button.dataset.address);
-  button.textContent = "Copied";
-  button.classList.add("copied");
-  setTimeout(() => {
-    if (button.textContent === "Copied") button.textContent = "📋";
     button.classList.remove("copied");
   }, 900);
 }
@@ -610,9 +619,13 @@ emailRows.addEventListener("click", (event) => {
 });
 
 savedMailboxList.addEventListener("click", (event) => {
-  const copyButton = event.target.closest(".copy-saved-mailbox-button");
-  if (copyButton) {
-    copySavedMailboxAddress(copyButton);
+  const editButton = event.target.closest(".edit-saved-mailbox-button");
+  if (editButton) {
+    openEditSavedMailboxModal({
+      id: editButton.dataset.id,
+      address: editButton.dataset.address,
+      reason: editButton.dataset.reason,
+    });
     return;
   }
 
@@ -651,7 +664,7 @@ openSavedMailboxModalButton.addEventListener("click", openSavedMailboxModal);
 saveDetailToButton.addEventListener("click", () => {
   openSavedMailboxModal(saveDetailToButton.dataset.address);
 });
-savedMailboxForm.addEventListener("submit", createSavedMailbox);
+savedMailboxForm.addEventListener("submit", submitSavedMailboxForm);
 closeSavedMailboxModalButton.addEventListener("click", () => {
   savedMailboxModal.close();
 });

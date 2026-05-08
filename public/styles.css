@@ -226,25 +226,14 @@ p {
   gap: 6px;
 }
 
-.copy-saved-mailbox-button,
+.edit-saved-mailbox-button,
 .delete-saved-mailbox-button {
   padding: 8px 10px;
 }
 
-.copy-saved-mailbox-button {
+.edit-saved-mailbox-button {
   background: #eef2ff;
   color: #3730a3;
-  opacity: 0;
-  transition: opacity 160ms ease;
-}
-
-.saved-mailbox-item:focus-within .copy-saved-mailbox-button,
-.saved-mailbox-item:hover .copy-saved-mailbox-button {
-  opacity: 1;
-}
-
-.copy-saved-mailbox-button.copied {
-  opacity: 1;
 }
 
 .delete-saved-mailbox-button {

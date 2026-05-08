@@ -106,31 +106,49 @@ function mapSavedMailbox(row) {
   };
 }
 
-function normalizeSavedMailboxInput(body) {
+function normalizeSavedMailboxReason(body) {
   if (!body || typeof body !== "object" || Array.isArray(body)) {
     return { error: "Request body must be an object." };
-  }
-
-  if (typeof body.address !== "string") {
-    return { error: "Valid email address is required." };
   }
 
   if (body.reason != null && typeof body.reason !== "string") {
     return { error: "Reason must be a string." };
   }
 
-  const address = body.address.trim().toLowerCase();
   const reason = body.reason?.trim() || null;
-
-  if (!address || address.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(address)) {
-    return { error: "Valid email address is required." };
-  }
 
   if (reason && reason.length > 500) {
     return { error: "Reason must be 500 characters or less." };
   }
 
-  return { address, reason };
+  return { reason };
+}
+
+function normalizeSavedMailboxInput(body) {
+  const savedMailboxReason = normalizeSavedMailboxReason(body);
+
+  if (savedMailboxReason.error) {
+    return savedMailboxReason;
+  }
+
+  if (typeof body.address !== "string") {
+    return { error: "Valid email address is required." };
+  }
+
+  const address = body.address.trim().toLowerCase();
+
+  if (!address || address.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(address)) {
+    return { error: "Valid email address is required." };
+  }
+
+  return { address, reason: savedMailboxReason.reason };
+}
+
+function normalizeSavedMailboxId(value) {
+  if (!/^[1-9]\d*$/.test(value)) return null;
+
+  const id = Number(value);
+  return Number.isSafeInteger(id) ? id : null;
 }
 
 const app = express();
@@ -179,15 +197,36 @@ app.post("/api/saved-mailboxes", (req, res) => {
   }
 });
 
-app.delete("/api/saved-mailboxes/:id", (req, res) => {
-  if (!/^[1-9]\d*$/.test(req.params.id)) {
+app.patch("/api/saved-mailboxes/:id", (req, res) => {
+  const id = normalizeSavedMailboxId(req.params.id);
+
+  if (!id) {
     res.status(400).json({ error: "Valid saved mailbox id is required." });
     return;
   }
 
-  const id = Number(req.params.id);
+  const savedMailboxReason = normalizeSavedMailboxReason(req.body);
 
-  if (!Number.isSafeInteger(id)) {
+  if (savedMailboxReason.error) {
+    res.status(400).json({ error: savedMailboxReason.error });
+    return;
+  }
+
+  const result = db.prepare("UPDATE saved_mailboxes SET reason = ? WHERE id = ?").run(savedMailboxReason.reason, id);
+
+  if (result.changes === 0) {
+    res.status(404).json({ error: "Saved mailbox not found" });
+    return;
+  }
+
+  const row = db.prepare("SELECT * FROM saved_mailboxes WHERE id = ?").get(id);
+  res.json(mapSavedMailbox(row));
+});
+
+app.delete("/api/saved-mailboxes/:id", (req, res) => {
+  const id = normalizeSavedMailboxId(req.params.id);
+
+  if (!id) {
     res.status(400).json({ error: "Valid saved mailbox id is required." });
     return;
   }
