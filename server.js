@@ -47,8 +47,8 @@ function seedWelcomeEmail() {
   });
 }
 
-function extractCode(body) {
-  return body?.match(/\b\d{6}\b/)?.[0] ?? null;
+function extractCode(subject, body) {
+  return subject?.match(/\b\d{6}\b/)?.[0] ?? body?.match(/>\s*(\d{6})\s*<\//)?.[1] ?? null;
 }
 
 function sanitizeBody(parsed) {
@@ -158,7 +158,7 @@ const smtpServer = new SMTPServer({
         toAddress: parsed.to?.value?.[0]?.address ?? null,
         subject: parsed.subject ?? null,
         body,
-        code: extractCode(body),
+        code: extractCode(parsed.subject, body),
         createdAt: new Date().toISOString(),
       };
 
