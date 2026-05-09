@@ -323,7 +323,7 @@ p {
 
 .two-factor-field #twoFactorSecretInput {
   box-sizing: border-box;
-  padding: 16px 12px 6px;
+  padding: 16px 44px 6px 12px;
   width: 100%;
 }
 
@@ -347,6 +347,11 @@ p {
   font-size: 12px;
   top: 5px;
   transform: none;
+}
+
+#clearTwoFactorSecretButton {
+  font-size: 22px;
+  padding: 6px 10px;
 }
 
 .two-factor-card #twoFactorCodeButton {

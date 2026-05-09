@@ -13,6 +13,9 @@ const closeSavedMailboxDrawerButton = document.querySelector(
   "#closeSavedMailboxDrawerButton",
 );
 const twoFactorSecretInput = document.querySelector("#twoFactorSecretInput");
+const clearTwoFactorSecretButton = document.querySelector(
+  "#clearTwoFactorSecretButton",
+);
 const twoFactorCodeButton = document.querySelector("#twoFactorCodeButton");
 const emailModal = document.querySelector("#emailModal");
 const closeModalButton = document.querySelector("#closeModalButton");
@@ -704,6 +707,11 @@ function syncClearSearchButton() {
   clearSearchButton.hidden = searchInput.value.length === 0;
 }
 
+function syncClearTwoFactorSecretButton() {
+  if (!clearTwoFactorSecretButton) return;
+  clearTwoFactorSecretButton.hidden = twoFactorSecretInput.value.length === 0;
+}
+
 let searchTimer;
 searchInput.addEventListener("input", () => {
   clearTimeout(searchTimer);
@@ -719,6 +727,14 @@ clearSearchButton.addEventListener("click", () => {
   loadEmails();
   searchInput.focus();
 });
+
+clearTwoFactorSecretButton?.addEventListener("click", () => {
+  twoFactorSecretInput.value = "";
+  syncClearTwoFactorSecretButton();
+  setTwoFactorSecret("");
+  twoFactorSecretInput.focus();
+});
+
 refreshButton.addEventListener("click", () => {
   loadSavedMailboxes();
   loadEmails();
@@ -737,9 +753,10 @@ savedMailboxForm.addEventListener("submit", submitSavedMailboxForm);
 closeSavedMailboxModalButton.addEventListener("click", () => {
   savedMailboxModal.close();
 });
-twoFactorSecretInput.addEventListener("input", () =>
-  setTwoFactorSecret(twoFactorSecretInput.value),
-);
+twoFactorSecretInput.addEventListener("input", () => {
+  syncClearTwoFactorSecretButton();
+  setTwoFactorSecret(twoFactorSecretInput.value);
+});
 twoFactorCodeButton.addEventListener("click", () =>
   copyCode(twoFactorCodeButton),
 );
@@ -765,6 +782,7 @@ document.addEventListener("keydown", (event) => {
 });
 
 syncClearSearchButton();
+syncClearTwoFactorSecretButton();
 setTwoFactorSecret(twoFactorSecretInput.value);
 loadSavedMailboxes();
 loadEmails();
