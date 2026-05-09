@@ -1,5 +1,6 @@
 const emailRows = document.querySelector("#emailRows");
 const searchInput = document.querySelector("#searchInput");
+const clearSearchButton = document.querySelector("#clearSearchButton");
 const refreshButton = document.querySelector("#refreshButton");
 const openSavedMailboxDrawerButton = document.querySelector(
   "#openSavedMailboxDrawerButton",
@@ -639,16 +640,30 @@ savedMailboxList.addEventListener("click", (event) => {
   if (!button) return;
 
   searchInput.value = button.dataset.address;
+  syncClearSearchButton();
   updateSavedMailboxActiveState();
   closeSavedMailboxDrawer();
   loadEmails();
 });
 
+function syncClearSearchButton() {
+  clearSearchButton.hidden = searchInput.value.length === 0;
+}
+
 let searchTimer;
 searchInput.addEventListener("input", () => {
   clearTimeout(searchTimer);
+  syncClearSearchButton();
   updateSavedMailboxActiveState();
   searchTimer = setTimeout(loadEmails, 250);
+});
+clearSearchButton.addEventListener("click", () => {
+  clearTimeout(searchTimer);
+  searchInput.value = "";
+  syncClearSearchButton();
+  updateSavedMailboxActiveState();
+  loadEmails();
+  searchInput.focus();
 });
 refreshButton.addEventListener("click", () => {
   loadSavedMailboxes();
@@ -695,6 +710,7 @@ document.addEventListener("keydown", (event) => {
   }
 });
 
+syncClearSearchButton();
 setTwoFactorSecret(twoFactorSecretInput.value);
 loadSavedMailboxes();
 loadEmails();

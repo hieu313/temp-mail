@@ -14,7 +14,10 @@
           <p>Danh sách email nhận được qua SMTP.</p>
         </div>
         <div class="header-actions">
-          <input id="searchInput" type="search" placeholder="Search from/to..." autocomplete="off">
+          <div class="search-field">
+            <input id="searchInput" type="search" placeholder="Search from/to..." autocomplete="off">
+            <button id="clearSearchButton" class="clear-search-button" type="button" aria-label="Xóa tìm kiếm" hidden>×</button>
+          </div>
           <button id="refreshButton" type="button">Làm mới</button>
           <button id="openSavedMailboxDrawerButton" type="button">Saved mails</button>
         </div>

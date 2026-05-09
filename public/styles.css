@@ -61,6 +61,31 @@ textarea:focus-visible {
   padding: 10px 12px;
 }
 
+.search-field {
+  position: relative;
+}
+
+.search-field #searchInput {
+  padding-right: 38px;
+}
+
+#searchInput::-webkit-search-cancel-button,
+#searchInput::-webkit-search-decoration {
+  appearance: none;
+}
+
+.clear-search-button {
+  background: transparent;
+  color: #6b7280;
+  font-size: 20px;
+  line-height: 1;
+  padding: 4px 8px;
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
 #savedMailboxReasonInput {
   min-height: 110px;
   resize: vertical;
@@ -531,6 +556,7 @@ dd {
     width: 100%;
   }
 
+  .search-field,
   #searchInput,
   #twoFactorSecretInput,
   #savedMailboxAddressInput,
