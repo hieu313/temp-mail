@@ -187,6 +187,8 @@ function createSavedMailboxItem(mailbox) {
   const prefix = document.createElement("strong");
   const domain = document.createElement("span");
   const actions = document.createElement("div");
+  const copyAddressButton = document.createElement("button");
+  const copyReasonButton = document.createElement("button");
   const editButton = document.createElement("button");
   const deleteButton = document.createElement("button");
   const addressParts = splitMailboxAddress(mailbox.address);
@@ -217,18 +219,35 @@ function createSavedMailboxItem(mailbox) {
   }
 
   actions.className = "saved-mailbox-item-actions";
+
+  copyAddressButton.className = "copy-saved-mailbox-address-button";
+  copyAddressButton.type = "button";
+  copyAddressButton.dataset.address = mailbox.address;
+  copyAddressButton.textContent = "Copy mail";
+
+  copyReasonButton.className = "copy-saved-mailbox-reason-button";
+  copyReasonButton.type = "button";
+  copyReasonButton.dataset.reason = mailbox.reason || "";
+  copyReasonButton.textContent = "Copy reason";
+  if (!mailbox.reason?.trim()) {
+    copyReasonButton.disabled = true;
+    copyReasonButton.title = "Không có lý do";
+  }
+
   editButton.className = "edit-saved-mailbox-button";
   editButton.type = "button";
   editButton.dataset.id = mailbox.id;
   editButton.dataset.address = mailbox.address;
   editButton.dataset.reason = mailbox.reason || "";
   editButton.textContent = "Sửa";
+
   deleteButton.className = "delete-saved-mailbox-button";
   deleteButton.type = "button";
   deleteButton.dataset.id = mailbox.id;
   deleteButton.setAttribute("aria-label", `Xóa ${mailbox.address}`);
   deleteButton.textContent = "Xóa";
-  actions.append(editButton, deleteButton);
+
+  actions.append(copyAddressButton, copyReasonButton, editButton, deleteButton);
   item.append(button, actions);
   return item;
 }
@@ -518,6 +537,17 @@ async function copyCode(button) {
   }, 900);
 }
 
+async function copySavedMailboxText(button, value, restoreLabel) {
+  if (!value) return;
+
+  await navigator.clipboard.writeText(value);
+  button.textContent = "Copied";
+  setTimeout(() => {
+    if (button.isConnected && button.textContent === "Copied")
+      button.textContent = restoreLabel;
+  }, 900);
+}
+
 async function copyAddressText(element) {
   const address = element.dataset.copyAddress;
   if (!address) return;
@@ -620,6 +650,30 @@ emailRows.addEventListener("click", (event) => {
 });
 
 savedMailboxList.addEventListener("click", (event) => {
+  const copyAddressButton = event.target.closest(
+    ".copy-saved-mailbox-address-button",
+  );
+  if (copyAddressButton) {
+    copySavedMailboxText(
+      copyAddressButton,
+      copyAddressButton.dataset.address,
+      "Copy mail",
+    );
+    return;
+  }
+
+  const copyReasonButton = event.target.closest(
+    ".copy-saved-mailbox-reason-button",
+  );
+  if (copyReasonButton) {
+    copySavedMailboxText(
+      copyReasonButton,
+      copyReasonButton.dataset.reason,
+      "Copy reason",
+    );
+    return;
+  }
+
   const editButton = event.target.closest(".edit-saved-mailbox-button");
   if (editButton) {
     openEditSavedMailboxModal({

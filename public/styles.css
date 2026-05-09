@@ -203,6 +203,16 @@ p {
   padding: 8px;
 }
 
+.saved-mailbox-item-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+  padding-top: 6px;
+  border-top: 1px solid #e5e7eb;
+}
+
 .saved-mailbox-item:focus-within,
 .saved-mailbox-item:hover {
   border-color: #2563eb;
@@ -246,24 +256,55 @@ p {
   font-style: italic;
 }
 
-.saved-mailbox-item-actions {
-  display: inline-flex;
-  gap: 6px;
-}
 
 .edit-saved-mailbox-button,
-.delete-saved-mailbox-button {
-  padding: 8px 10px;
+.delete-saved-mailbox-button,
+.copy-saved-mailbox-address-button,
+.copy-saved-mailbox-reason-button {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  color: #374151;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+  min-height: 36px;
+  padding: 8px 12px;
+}
+
+.edit-saved-mailbox-button:hover,
+.delete-saved-mailbox-button:hover,
+.copy-saved-mailbox-address-button:hover,
+.copy-saved-mailbox-reason-button:hover {
+  background: #f9fafb;
+}
+
+.copy-saved-mailbox-address-button,
+.copy-saved-mailbox-reason-button {
+  border-color: #cbd5e1;
+  color: #334155;
+}
+
+.copy-saved-mailbox-reason-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
 }
 
 .edit-saved-mailbox-button {
-  background: #eef2ff;
+  border-color: #c7d2fe;
   color: #3730a3;
 }
 
+.edit-saved-mailbox-button:hover {
+  background: #eef2ff;
+}
+
 .delete-saved-mailbox-button {
+  border-color: #fecaca;
+  color: #b91c1c;
+}
+
+.delete-saved-mailbox-button:hover {
   background: #fee2e2;
-  color: #991b1b;
 }
 
 .two-factor-card {
