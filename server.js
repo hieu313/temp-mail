@@ -11,6 +11,7 @@ const HTTP_PORT = Number(process.env.HTTP_PORT || 3000);
 const SMTP_PORT = Number(process.env.SMTP_PORT || 25);
 const DB_PATH = path.join(__dirname, "emails.db");
 const PUBLIC_DIR = path.join(__dirname, "public");
+const MAIL_DOMAIN = process.env.MAIL_DOMAIN || "hieunm3103.id.vn";
 const DOMPurify = createDOMPurify(new JSDOM("").window);
 
 const db = new Database(DB_PATH);
@@ -74,6 +75,12 @@ function escapeLike(value) {
   return value.replace(/[\\%_]/g, "\\$&");
 }
 
+function randomMailboxAddress() {
+  const timestamp = Date.now().toString(36);
+  const suffix = Math.random().toString(36).slice(2, 10);
+  return `user${timestamp}${suffix}@${MAIL_DOMAIN}`.toLowerCase();
+}
+
 function logEmail(email) {
   console.log([
     "=".repeat(72),
@@ -94,6 +101,20 @@ function mapEmail(row) {
     body: row.body,
     code: row.code,
     createdAt: row.created_at,
+  };
+}
+
+function mapFreemailEmail(row) {
+  return {
+    id: row.id,
+    from_address: row.from_address,
+    to_address: row.to_address,
+    subject: row.subject,
+    body: row.body,
+    text: row.body,
+    preview: row.body,
+    verification_code: row.code,
+    created_at: row.created_at,
   };
 }
 
@@ -154,6 +175,10 @@ function normalizeSavedMailboxId(value) {
 const app = express();
 app.use(express.json());
 app.use(express.static(PUBLIC_DIR));
+
+app.get("/api/generate", (req, res) => {
+  res.json({ email: randomMailboxAddress() });
+});
 
 app.post("/api/2fa/generate", (req, res) => {
   try {
@@ -242,11 +267,29 @@ app.delete("/api/saved-mailboxes/:id", (req, res) => {
 });
 
 app.get("/api/emails", (req, res) => {
-  const rows = db.prepare(`
-    SELECT id, from_address, to_address, subject, code, created_at
-    FROM emails
-    ORDER BY id DESC
-  `).all();
+  const mailbox = String(req.query.mailbox || req.query.email || "").trim().toLowerCase();
+  const limitValue = Number(req.query.limit || 50);
+  const limit = Number.isInteger(limitValue) && limitValue > 0 ? Math.min(limitValue, 100) : 50;
+
+  const rows = mailbox
+    ? db.prepare(`
+        SELECT id, from_address, to_address, subject, body, code, created_at
+        FROM emails
+        WHERE lower(to_address) = ?
+        ORDER BY id DESC
+        LIMIT ?
+      `).all(mailbox, limit)
+    : db.prepare(`
+        SELECT id, from_address, to_address, subject, body, code, created_at
+        FROM emails
+        ORDER BY id DESC
+        LIMIT ?
+      `).all(limit);
+
+  if (mailbox || req.query.limit || req.query.email) {
+    res.json(rows.map(mapFreemailEmail));
+    return;
+  }
 
   res.json(rows.map(mapEmail));
 });
